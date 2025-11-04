@@ -1,35 +1,23 @@
+import { handleLogin } from '@/utils/authutil';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import { supabase } from '../services/supabaseClient';
 
 export default function Login() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const handleLogin = async () => {
-    setLoading(true);
-    const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-
-    if (error) {
-      Alert.alert('Login Failed', error.message);
-    } else {
-        router.replace('/chazarah');
-    }
-  };
 
   return (
     <KeyboardAvoidingView
@@ -42,13 +30,13 @@ export default function Login() {
       >
         <View style={styles.container}>
 
-        {/* <Image
-            source={require('../assets/images/AteresAmi_LogLong.avif')}
+        <Image
+            source={require('@/assets/images/AALogo.png')}
             style={styles.logo}
             resizeMode="contain"
-          /> */}
+          />
 
-          <Text style={styles.title}>Welcome Back</Text>
+          <Text style={styles.title}>Chazarah Tracker</Text>
 
           <TextInput
             style={styles.input}
@@ -67,7 +55,7 @@ export default function Login() {
             value={password}
           />
 
-          <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+          <TouchableOpacity style={styles.button} onPress={async () => await handleLogin(email.trim(), password, router, setLoading)} disabled={loading}>
             <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Log In'}</Text>
           </TouchableOpacity>
 
@@ -82,8 +70,8 @@ export default function Login() {
 
 const styles = StyleSheet.create({
   container: { width: '90%', alignItems: 'center' },
-  logo: { width: 260, height: 80, marginBottom: 16 }, // ensure the image is visible
-  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 20 },
+  logo: { width: 320, height: 60, marginBottom: 4 }, // ensure the image is visible
+  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 20, color: '#ae9e37ff' },
   input: { width: '100%', borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, marginVertical: 8 },
   button: { backgroundColor: '#007AFF', padding: 15, borderRadius: 8, width: '100%', alignItems: 'center', marginTop: 10 },
   buttonText: { color: 'white', fontWeight: 'bold' },

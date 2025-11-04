@@ -1,7 +1,7 @@
+import { handleSignUp } from '@/utils/authutil';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -9,9 +9,8 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
-import { supabase } from '../services/supabaseClient';
 
 export default function SignUp() {
     const router = useRouter();
@@ -20,38 +19,6 @@ export default function SignUp() {
     const [lastname, setLastname] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
-
-    const handleSignUp = async () => {
-        try {
-            setLoading(true);
-            const { data, error } = await supabase.auth.signUp({
-                email: email.trim(),
-                password,
-                options: {
-                    data: {
-                        display_name: `${firstname.trim()} ${lastname.trim()}`,
-                        firstname: firstname.trim(),
-                        lastname: lastname.trim(),
-                    },
-                    emailRedirectTo: undefined, // disables email confirmation
-                }
-            });
-
-            if (error) {
-                Alert.alert('Error', error.message);
-                return;
-            }
-
-            Alert.alert('Success', 'Account created successfully!');
-            router.replace('/login');
-        } catch (err) {
-            console.error('Unexpected signup error:', err);
-            Alert.alert('Error', 'Something went wrong. Please try again.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
 
     return (
         <KeyboardAvoidingView
@@ -98,7 +65,7 @@ export default function SignUp() {
                         value={password}
                     />
 
-                    <TouchableOpacity style={styles.button} onPress={handleSignUp} disabled={loading}>
+                    <TouchableOpacity style={styles.button} onPress={() => handleSignUp(email, password, firstname, lastname, router, setLoading)} disabled={loading}>
                         <Text style={styles.buttonText}>{loading ? 'Signing up...' : 'Sign Up'}</Text>
                     </TouchableOpacity>
 

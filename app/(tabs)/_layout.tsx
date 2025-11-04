@@ -1,95 +1,123 @@
-import { Ionicons } from '@expo/vector-icons'; // 👈 For icons
+import type { Year } from '@/types/year';
+import { getLoggedInUser, handleLogout } from '@/utils/authutil';
+import { fetchYears, getCurrentYear } from '@/utils/yearutils';
+import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import { Tabs, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { createContext, useEffect, useState } from 'react';
 import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
-import { supabase } from '../../services/supabaseClient'; // adjust if needed
+
+
+export const YearContext = createContext<Year | null>(null);
+export const UserContext = createContext<any>(null);
+
 
 export default function TabsLayout() {
-  const [years, setYears] = useState<{ JewishYear: number }[]>([]);
-  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const [years, setYears] = useState<Year[]>([]);
+  const [selectedYear, setSelectedYear] = useState<Year | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showPicker, setShowPicker] = useState(false);
+  //const [showPicker, setShowPicker] = useState(false);
+  const [user, setUser] = useState<any>();
   const router = useRouter();
 
   // 🔹 Fetch years from Supabase
   useEffect(() => {
-    const fetchYears = async () => {
-      const { data, error } = await supabase
-        .from('TblYear')
-        .select('JewishYear')
-        .order('JewishYear', { ascending: false });
-
-      if (!error && data) {
-        setYears(data);
-        setSelectedYear(data[0]?.JewishYear ?? null);
-      }
+    const fetchData = async () => {
+      setLoading(true);
+      const fetchedYears = await fetchYears();
+      setYears(fetchedYears);
+      const defaultYear = getCurrentYear(fetchedYears);
+      setSelectedYear(defaultYear ?? fetchedYears[0] ?? null);
+      const userObj = await getLoggedInUser();
+      setUser(userObj);
       setLoading(false);
     };
-    fetchYears();
+    fetchData();
   }, []);
 
-  // 🔹 Logout handler
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.replace('/login');
-  };
-
   return (
-    <View style={{ flex: 1 }}>
-      <Tabs
-        screenOptions={({ route }) => ({
-          headerStyle: { backgroundColor: '#fff' },
-          headerTitleAlign: 'left',
+    <UserContext.Provider value={user}>
+    <YearContext.Provider value={selectedYear}>
+      <View style={{ flex: 1 }}>
+        <Tabs
+          screenOptions={({ route }) => ({
+            headerStyle: { backgroundColor: '#fff' },
+            headerTitleAlign: 'left',
 
-          // 🔹 Add picker in header
-          headerTitle: () =>
-            loading ? (
-              <ActivityIndicator size="small" />
-            ) : (
-              <TouchableOpacity onPress={() => setShowPicker(!showPicker)}>
-                <Text style={{ fontWeight: '600', fontSize: 16 }}>
-                  {selectedYear ?? 'Select a Year'} ▼
-                </Text>
+            // 🔹 Add picker in header
+            headerTitle: () =>
+              loading ? (
+                <ActivityIndicator size="small" />
+              ) : (
+                <View
+      style={{
+        backgroundColor: '#FFFF', // match tab bg
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: '#2c3e50',
+        paddingHorizontal: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+                <Picker
+                  style={{
+                    width: 110,
+                  }}
+                  selectedValue={selectedYear ?? undefined}
+                  onValueChange={(yearObj: Year) => {
+                    setSelectedYear(yearObj);
+                  }}
+                  dropdownIconColor="#2c3e50"
+                  mode="dropdown"
+                >
+                  {years.map((yearObj) => (
+                    <Picker.Item
+                      key={yearObj.JewishYear}
+                      label={`${yearObj.JewishYear}`}
+                      value={yearObj}
+                    />
+                  ))}
+                </Picker>
+                </View>
+              ),
+
+            // 🔹 Logout button
+            headerRight: () => (
+              <TouchableOpacity
+                onPress={() => handleLogout(router)}
+                style={{
+                  marginRight: 10,
+                  //backgroundColor: '#e74c3c',
+                  paddingVertical: 6,
+                  paddingHorizontal: 12,
+                  borderRadius: 6,
+                }}
+              >
+                <Text style={{ color: '#e74c3c', fontWeight: '600' }}>Logout</Text>
               </TouchableOpacity>
             ),
 
-          // 🔹 Logout button
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={handleLogout}
-              style={{
-                marginRight: 10,
-                backgroundColor: '#e74c3c',
-                paddingVertical: 6,
-                paddingHorizontal: 12,
-                borderRadius: 6,
-              }}
-            >
-              <Text style={{ color: '#fff', fontWeight: '600' }}>Logout</Text>
-            </TouchableOpacity>
-          ),
+            // 🔹 Default tab icons restored
+            tabBarIcon: ({ color, size }) => {
+              var iconName: keyof typeof Ionicons.glyphMap;
 
-          // 🔹 Default tab icons restored
-          tabBarIcon: ({ color, size }) => {
-            let iconName: keyof typeof Ionicons.glyphMap;
+              if (route.name === 'chazarah') iconName = 'time-outline';
+              else if (route.name === 'sessions') iconName = 'list-outline';
+              else iconName = 'person-outline';
 
-            if (route.name === 'chazarah') iconName = 'time-outline';
-            else if (route.name === 'sessions') iconName = 'list-outline';
-            else iconName = 'person-outline';
+              return <Ionicons name={iconName} size={size} color={color} />;
+            },
+            tabBarActiveTintColor: '#2c3e50',
+            tabBarInactiveTintColor: '#95a5a6',
+          })}
+        >
+          <Tabs.Screen name="chazarah" options={{ title: 'Chazarah' }} />
+          <Tabs.Screen name="sessions" options={{ title: 'Sessions' }} />
+          <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
+        </Tabs>
 
-            return <Ionicons name={iconName} size={size} color={color} />;
-          },
-          tabBarActiveTintColor: '#2c3e50',
-          tabBarInactiveTintColor: '#95a5a6',
-        })}
-      >
-        <Tabs.Screen name="chazarah" options={{ title: 'Chazarah' }} />
-        <Tabs.Screen name="sessions" options={{ title: 'Sessions' }} />
-        <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
-      </Tabs>
-
-      {/* 🔹 Year Picker dropdown */}
+        {/* 🔹 Year Picker dropdown
       {showPicker && (
         <View
           style={{
@@ -115,12 +143,14 @@ export default function TabsLayout() {
               <Picker.Item
                 key={y.JewishYear}
                 label={`${y.JewishYear}`}
-                value={y.JewishYear}
+                value={y}
               />
             ))}
           </Picker>
         </View>
-      )}
-    </View>
+      )} */}
+      </View>
+    </YearContext.Provider>
+    </UserContext.Provider>
   );
 }
