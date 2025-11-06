@@ -29,7 +29,8 @@ export async function getSessionsByUserAndYear(UserId: string, YearId: number) {
     .from('TblSession')
     .select('*')
     .eq('UserId', UserId)
-    .eq('YearId', YearId);
+    .eq('YearId', YearId)
+    .order('SessionStartTime', { ascending: true });
   if (error) throw error;
   return data as Session[];
 }

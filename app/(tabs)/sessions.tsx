@@ -1,24 +1,23 @@
+import ManualSessionEntry from '@/components/ManualSessionEntry';
+import { formatDateMDY } from '@/utils/dateutil';
+import { getSessionsByUserAndYear } from '@/utils/sessionutils';
+import { msToMinutes, to12HourTime } from '@/utils/timeutil';
+import { isCurrentYear } from '@/utils/yearutils';
+import { useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Dimensions, LayoutChangeEvent, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
-    interpolate,
-    runOnJS,
-    useAnimatedScrollHandler,
-    useAnimatedStyle,
-    useSharedValue,
-    type SharedValue,
+  interpolate,
+  runOnJS,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  type SharedValue,
 } from 'react-native-reanimated';
+import { UserContext, YearContext } from './_layout';
 
-
-const mockSessions = [
-  { id: 1, startTime: '2025-11-01 08:00', duration: 20, note: 'Parsha Noach' },
-  { id: 2, startTime: '2025-11-02 09:30', duration: 25, note: 'Tehillim 30–40' },
-  { id: 3, startTime: '2025-11-03 19:00', duration: 15, note: 'Mishnah Berurah 1' },
-  { id: 4, startTime: '2025-11-04 20:15', duration: 30, note: 'Gemara Berachos 3b' },
-  { id: 5, startTime: '2025-11-05 07:45', duration: 18, note: 'Chumash Review' },
-];
 
 const ITEM_HEIGHT = 60;
 const WHEEL_HEIGHT = 400;
@@ -37,24 +36,24 @@ const WheelItem = ({
 }) => {
   const animatedStyle = useAnimatedStyle(() => {
     const position = index * ITEM_HEIGHT - scrollY.value;
-   const rotateX = interpolate(
-    position,
-    [-120, -60, 0, 60, 120],
-    [70, 45, 0, -45, -70],
-    'clamp'
-  );
-  const scale = interpolate(
-    position,
-    [-120, -60, 0, 60, 120],
-    [0.6, 0.8, 1, 0.8, 0.6],
-    'clamp'
-  );
-  const opacity = interpolate(
-    position,
-    [-120, -60, 0, 60, 120],
-    [0.15, 0.3, 1, 0.3, 0.15],
-    'clamp'
-  );
+    const rotateX = interpolate(
+      position,
+      [-120, -60, 0, 60, 120],
+      [70, 45, 0, -45, -70],
+      'clamp'
+    );
+    const scale = interpolate(
+      position,
+      [-120, -60, 0, 60, 120],
+      [0.6, 0.8, 1, 0.8, 0.6],
+      'clamp'
+    );
+    const opacity = interpolate(
+      position,
+      [-120, -60, 0, 60, 120],
+      [0.15, 0.3, 1, 0.3, 0.15],
+      'clamp'
+    );
     return {
       transform: [{ perspective: 400 }, { rotateX: `${rotateX}deg` }, { scale }],
       opacity,
@@ -63,8 +62,8 @@ const WheelItem = ({
 
   return (
     <Animated.View style={[styles.itemContainer, animatedStyle, isActive && styles.itemActive]}>
-      <Text style={[styles.itemText, isActive && styles.itemTextActive]}>{`${item.duration} min`}</Text>
-      <Text style={[styles.subText, isActive && styles.subTextActive]}>{item.startTime.split(' ')[0]}</Text>
+      <Text style={[styles.itemText, isActive && styles.itemTextActive]}>{formatDateMDY(item.startTime)}</Text>
+      <Text style={[styles.subText, isActive && styles.subTextActive]}>{msToMinutes(item.duration)}</Text>
     </Animated.View>
   );
 };
@@ -72,79 +71,150 @@ const WheelItem = ({
 
 export default function SessionsScreen() {
   const scrollY = useSharedValue(0);
-  const flatListRef = useRef<Animated.FlatList<typeof mockSessions[0]>>(null);
-  const [selectedIndex, setSelectedIndex] = useState(mockSessions.length - 1);
+  const flatListRef = useRef<Animated.FlatList<any>>(null);
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const [wheelHeight, setWheelHeight] = useState(0);
+  const [manualVisible, setManualVisible] = useState(false);
+  const [editSession, setEditSession] = useState<any | null>(null);
+
+
+  const selectedYear = useContext(YearContext);
+  const user = useContext(UserContext);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      let isActive = true;
+      async function fetchSessions() {
+        if (user?.id && selectedYear?.JewishYear) {
+          try {
+            const data = await getSessionsByUserAndYear(user.id, selectedYear.JewishYear);
+            if (isActive) {
+              setSessions(data || []);
+              const lastIndex = (data && data.length > 0) ? data.length - 1 : 0;
+              setSelectedIndex(lastIndex);
+            
+              setTimeout(() => {
+              if (flatListRef.current && data && data.length > 0) {
+                flatListRef.current.scrollToIndex({ index: lastIndex, animated: false });
+              }
+            }, 0);
+            
+            }
+          } catch (e) {
+            if (isActive) {
+              setSessions([]);
+              setSelectedIndex(0);
+            }
+          }
+        } else {
+          if (isActive) {
+            setSessions([]);
+            setSelectedIndex(0);
+          }
+        }
+      }
+      fetchSessions();
+      return () => {
+        isActive = false;
+      };
+    }, [user, selectedYear])
+  );
 
   const wheelPadding = useMemo(() => {
     return wheelHeight > 0 ? Math.max((wheelHeight - ITEM_HEIGHT) / 2, 0) : height * 0.25;
   }, [wheelHeight]);
 
-useEffect(() => {
-  if (selectedIndex !== null) {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid).catch(() => {});
-  }
-}, [selectedIndex]);
-
-const scrollHandler = useAnimatedScrollHandler({
-  onScroll: (event) => {
-    scrollY.value = event.contentOffset.y;
-    const index = Math.round(event.contentOffset.y / ITEM_HEIGHT);
-    if (index !== selectedIndex && index >= 0 && index < mockSessions.length) {
-      runOnJS(setSelectedIndex)(index);
+  useEffect(() => {
+    if (selectedIndex !== null && sessions.length > 0) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid).catch(() => { });
     }
-  },
-});
+  }, [selectedIndex, sessions.length]);
+
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+      const index = Math.round(event.contentOffset.y / ITEM_HEIGHT);
+      if (index !== selectedIndex && index >= 0 && index < sessions.length) {
+        runOnJS(setSelectedIndex)(index);
+      }
+    },
+  });
 
   const handleWheelLayout = (event: LayoutChangeEvent) => {
     setWheelHeight(event.nativeEvent.layout.height);
   };
 
-  const selectedSession = mockSessions[selectedIndex];
+  const handleEdit = () => {
+    if (selectedSession) {
+      setEditSession({
+        SessionId: selectedSession.SessionId,
+        SessionStartTime: selectedSession.SessionStartTime,
+        SessionLength: selectedSession.SessionLength,
+        SessionNote: selectedSession.SessionNote,
+      });
+      setManualVisible(true);
+    }
+  };
+
+
+  const selectedSession = sessions[selectedIndex];
 
   return (
     <View style={styles.container}>
-         {/* Left side: Session details */}
+      {/* Left: Details */}
       <View style={styles.detailsContainer}>
         {selectedSession ? (
           <>
             <Text style={styles.detailTitle}>Session Details</Text>
             <Text style={styles.detailText}>
-              <Text style={styles.label}>Date:</Text> {selectedSession.startTime.split(' ')[0]}
+              <Text style={styles.label}>Date:</Text> {formatDateMDY(selectedSession.SessionStartTime)}
             </Text>
             <Text style={styles.detailText}>
-              <Text style={styles.label}>Start Time:</Text> {selectedSession.startTime.split(' ')[1]}
+              <Text style={styles.label}>Start Time:</Text> {to12HourTime(selectedSession.SessionStartTime)}
             </Text>
             <Text style={styles.detailText}>
-              <Text style={styles.label}>Duration:</Text> {selectedSession.duration} minutes
+              <Text style={styles.label}>Duration:</Text> {msToMinutes(selectedSession.SessionLength)}
             </Text>
             <Text style={styles.detailText}>
-              <Text style={styles.label}>Note:</Text> {selectedSession.note}
+              <Text style={styles.label}>Note:</Text> {selectedSession.SessionNote}
             </Text>
 
-            <View style={styles.buttonRow}>
-              <TouchableOpacity style={[styles.button, styles.editButton]}>
-                <Text style={styles.buttonText}>Edit</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.button, styles.deleteButton]}>
-                <Text style={styles.buttonText}>Delete</Text>
-              </TouchableOpacity>
-            </View>
+            {isCurrentYear(selectedYear) ? (
+              <View style={styles.buttonRow}>
+                <TouchableOpacity 
+                style={[styles.button, styles.editButton]} onPress={handleEdit}>
+                  <Text style={styles.buttonText}>Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.button, styles.deleteButton]}>
+                  <Text style={styles.buttonText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <Text style={styles.disabledMsg}>
+                This session is for a previous year and cannot be altered
+              </Text>
+            )}
           </>
         ) : (
           <Text style={styles.placeholder}>Select a session to view details</Text>
         )}
       </View>
 
-      {/* Right side: Wheel */}
+      {/* Right: Wheel */}
       <View style={styles.wheelContainer} onLayout={handleWheelLayout}>
         <Animated.FlatList
           ref={flatListRef}
-          data={mockSessions}
-          keyExtractor={(item) => item.id.toString()}
+          data={sessions}
+          keyExtractor={(item) => item.SessionId?.toString() ?? item.id?.toString()}
           renderItem={({ item, index }) => (
             <WheelItem
-              item={item}
+              item={{
+                ...item,
+                startTime: item.SessionStartTime ?? '',
+                duration: item.SessionLength,
+                note: item.SessionNote,
+              }}
               index={index}
               scrollY={scrollY}
               isActive={index === selectedIndex}
@@ -193,6 +263,23 @@ const scrollHandler = useAnimatedScrollHandler({
           <Text style={styles.arrow}>◀</Text>
         </View>
       </View>
+      <ManualSessionEntry
+        visible={manualVisible}
+        onClose={() => {
+          setManualVisible(false);
+          setEditSession(null);
+        }}
+        mode="edit"
+        initialSession={editSession}
+        onSubmit={() => {
+          // Refresh sessions after edit
+          if (user?.id && selectedYear?.JewishYear) {
+            getSessionsByUserAndYear(user.id, selectedYear.JewishYear).then((data) => {
+              setSessions(data || []);
+            });
+          }
+        }}
+      />
     </View>
   );
 }
@@ -242,9 +329,28 @@ const styles = StyleSheet.create({
   detailText: { fontSize: 16, marginBottom: 6 },
   label: { fontWeight: '600' },
   buttonRow: { flexDirection: 'row', marginTop: 20, gap: 10 },
-  button: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 8 },
+  button: { 
+    flex: 1, 
+    alignItems: 'center', 
+    paddingVertical: 12, 
+    borderRadius: 8,
+    // Add shadow for iOS
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    // Add elevation for Android
+    elevation: 4,
+  },  
   editButton: { backgroundColor: '#007bff' },
   deleteButton: { backgroundColor: '#dc3545' },
   buttonText: { color: '#fff', fontWeight: 'bold' },
   placeholder: { textAlign: 'center', fontSize: 16, color: '#999' },
+
+  disabledMsg: {
+    color: '#adb5bd',
+    marginTop: 20,
+    textAlign: 'center',
+    fontSize: 15,
+  }
 });

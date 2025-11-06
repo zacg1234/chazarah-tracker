@@ -4,7 +4,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Font from 'expo-font';
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Alert, AppState, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, AppState, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 const STORAGE_KEY = 'chazarah_stopwatch';
 
@@ -21,6 +21,9 @@ export default function Stopwatch() {
     const [startTimestamp, setStartTimestamp] = useState<number | null>(null);
     const [fontLoaded, setFontLoaded] = useState(false);
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const [noteModalVisible, setNoteModalVisible] = useState(false);
+    const [note, setNote] = useState('');
+
 
     const selectedYear = useContext(YearContext);
     const user = useContext(UserContext);
@@ -112,7 +115,7 @@ export default function Stopwatch() {
     };
 
     // ✅ Submit
-    const handleSubmit = async () => {
+     const handleSubmit = async () => {
         if (!selectedYear) {
             Alert.alert('Error', 'No year selected.');
             return;
@@ -121,14 +124,33 @@ export default function Stopwatch() {
             Alert.alert('Error', 'No user logged in.');
             return;
         }
-        
+        setIsRunning(false); 
+        setNote('');
+        setNoteModalVisible(true);
+    };
+
+    const handleFinalSubmit = async () => {
+        if (!selectedYear) return;
+        // Save session start time as local time string (YYYY-MM-DD HH:mm:ss)
+        let sessionStartTime = '';
+        if (startTimestamp) {
+            const d = new Date(startTimestamp);
+            // Manually format as 'YYYY-MM-DD HH:mm:ss' in local time
+            const pad = (n: number) => n.toString().padStart(2, '0');
+            sessionStartTime = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        }
+        if (!sessionStartTime) {
+            Alert.alert('Error', 'Session start time is missing. Please start and stop the stopwatch before submitting.');
+            return;
+        }
         await createSession({
             UserId: user.id,
             YearId: selectedYear.JewishYear,
             SessionLength: elapsed,
-            SessionNote: '',
-            SessionStartTime: new Date(startTimestamp!).toISOString(),
+            SessionNote: note,
+            SessionStartTime: sessionStartTime,
         });
+        setNoteModalVisible(false);
         handleReset();
         Alert.alert('Submit', `Elapsed time: ${formatTime(elapsed)}`);
     };
@@ -157,7 +179,7 @@ export default function Stopwatch() {
                     <MaterialCommunityIcons
                         name={isRunning ? "pause-circle-outline" : "play-circle-outline"}
                         size={32}
-                        color="#D32F2F"
+                        color="#ffffff"
                         style={styles.iconCenter}
                     />
                 </TouchableOpacity>
@@ -170,7 +192,7 @@ export default function Stopwatch() {
                     <MaterialCommunityIcons
                         name="restart"
                         size={32}
-                        color="#D32F2F"
+                        color="#ffffff"
                         style={styles.iconCenter}
                     />
                 </TouchableOpacity>
@@ -191,6 +213,63 @@ export default function Stopwatch() {
                     </Text>
                 </TouchableOpacity>
             </View>
+            {/* Note Modal */}
+            <Modal
+    visible={noteModalVisible}
+    transparent
+    animationType="fade"
+    onRequestClose={() => setNoteModalVisible(false)}
+>
+    <View style={{
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        justifyContent: 'center',
+        alignItems: 'center'
+    }}>
+        <View style={{
+            backgroundColor: '#fff',
+            borderRadius: 14,
+            padding: 24,
+            width: 300,
+            alignItems: 'center'
+        }}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>
+                Add a note (optional)
+            </Text>
+            <TextInput
+                style={{
+                    borderWidth: 1,
+                    borderColor: '#ccc',
+                    borderRadius: 8,
+                    padding: 10,
+                    width: '100%',
+                    marginBottom: 18,
+                    fontSize: 16,
+                }}
+                placeholder="Type a note..."
+                value={note}
+                onChangeText={setNote}
+                multiline
+                autoFocus
+            />
+            <TouchableOpacity
+                style={{
+                    backgroundColor: '#007bff',
+                    paddingVertical: 10,
+                    paddingHorizontal: 18,
+                    borderRadius: 8,
+                    minWidth: 90,
+                    alignItems: 'center',
+                }}
+                onPress={handleFinalSubmit}
+            >
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>
+                    {note.trim() === '' ? 'Skip' : 'Submit'}
+                </Text>
+            </TouchableOpacity>
+        </View>
+    </View>
+</Modal>
         </View>
     );
 }
@@ -199,19 +278,14 @@ export default function Stopwatch() {
 const styles = StyleSheet.create({
     container: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     oldSchoolTime: {
-        fontSize: 64,
-        marginBottom: 40,
+        fontSize: 80,
+        marginBottom: 20,
         color: '#D32F2F',
         letterSpacing: 4,
-        textShadowColor: '#222',
-        textShadowOffset: { width: 2, height: 2 },
-        textShadowRadius: 4,
-        backgroundColor: '#FFF8E1',
-        borderWidth: 4,
-        borderColor: '#222',
-        borderRadius: 16,
+        textShadowColor: '#e09797ff',
+        textShadowRadius: 10,
         paddingHorizontal: 32,
-        paddingVertical: 16,
+        paddingVertical: 0,
         textAlign: 'center',
     },
     buttonRow: {
@@ -221,36 +295,36 @@ const styles = StyleSheet.create({
     },
     // Retro button base
     buttonRetro: {
-        backgroundColor: '#FFF8E1',
-        borderColor: '#222',
-        borderWidth: 3,
+        backgroundColor: '#261e1eff',
+        borderColor: '#000000ff',
+        borderWidth: 2,
         borderRadius: 12,
         paddingVertical: 10,
         paddingHorizontal: 16,
-        shadowColor: '#000',
-        shadowOpacity: 0.2,
-        shadowRadius: 3,
-        shadowOffset: { width: 0, height: 2 },
-        elevation: 3,
-        minWidth: 90,
+        marginHorizontal: 4,
+        shadowColor: '#020000ff',
+        shadowRadius: 60,
+        shadowOffset: { width: 10, height: 10 },
+        elevation: 10,
+        minWidth: 60,
         alignItems: 'center',
         justifyContent: 'center',
         height: 58,
     },
     // Variants (subtle accent shadows)
     playButton: {
-        shadowColor: '#D32F2F',
+        //shadowColor: '#D32F2F',
     },
     resetButton: {
-        shadowColor: '#6D4C41',
+        //shadowColor: '#D32F2F',
     },
     submitButton: {
-        shadowColor: '#2C3E50',
+        //shadowColor: '#D32F2F',
     },
     buttonTextRetro: {
-        color: '#D32F2F',
+        color: '#ffffff',
         letterSpacing: 2,
-        fontSize: 20,
+        fontSize: 32,
         textAlign: 'center',
     },
     submitText: {
