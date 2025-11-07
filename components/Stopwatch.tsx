@@ -1,5 +1,5 @@
 import { UserContext, YearContext } from '@/app/(tabs)/_layout';
-import { createSession } from '@/utils/sessionutils';
+import { createSession } from '@/utils/sessionutil';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Font from 'expo-font';
@@ -149,7 +149,7 @@ export default function Stopwatch() {
             SessionLength: elapsed,
             SessionNote: note,
             SessionStartTime: sessionStartTime,
-        });
+        }, selectedYear);
         setNoteModalVisible(false);
         handleReset();
         Alert.alert('Submit', `Elapsed time: ${formatTime(elapsed)}`);

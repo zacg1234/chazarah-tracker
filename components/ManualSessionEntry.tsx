@@ -1,5 +1,5 @@
 import { UserContext, YearContext } from '@/app/(tabs)/_layout';
-import { createSession, updateSession } from '@/utils/sessionutils';
+import { createSession, updateSession } from '@/utils/sessionutil';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import React, { useContext, useEffect, useState } from 'react';
 import { Alert, Modal, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -115,7 +115,7 @@ const handleTimeChange = (_event: any, selected?: Date) => {
         SessionStartTime: sessionStartTime,
         SessionLength: Number(sessionLength) * 60000,
         SessionNote: note,
-      });
+      }, selectedYear);
     } else {
       await createSession({
         UserId: user.id,
@@ -123,7 +123,7 @@ const handleTimeChange = (_event: any, selected?: Date) => {
         SessionLength: Number(sessionLength) * 60000,
         SessionNote: note,
         SessionStartTime: sessionStartTime,
-      });
+      }, selectedYear);
     }
     onClose();
     setSessionLength('');

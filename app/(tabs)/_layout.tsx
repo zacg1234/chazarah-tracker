@@ -114,41 +114,8 @@ export default function TabsLayout() {
         >
           <Tabs.Screen name="chazarah" options={{ title: 'Chazarah' }} />
           <Tabs.Screen name="sessions" options={{ title: 'Sessions' }} />
-          <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
+          <Tabs.Screen name="obligation" options={{ title: 'Obligation' }} />
         </Tabs>
-
-        {/* 🔹 Year Picker dropdown
-      {showPicker && (
-        <View
-          style={{
-            position: 'absolute',
-            top: 65,
-            left: 10,
-            right: 10,
-            backgroundColor: '#fff',
-            borderWidth: 1,
-            borderColor: '#ccc',
-            borderRadius: 8,
-            zIndex: 10,
-          }}
-        >
-          <Picker
-            selectedValue={selectedYear}
-            onValueChange={(val) => {
-              setSelectedYear(val);
-              setShowPicker(false);
-            }}
-          >
-            {years.map((y) => (
-              <Picker.Item
-                key={y.JewishYear}
-                label={`${y.JewishYear}`}
-                value={y}
-              />
-            ))}
-          </Picker>
-        </View>
-      )} */}
       </View>
     </YearContext.Provider>
     </UserContext.Provider>

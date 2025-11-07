@@ -1,6 +1,6 @@
 import ManualSessionEntry from '@/components/ManualSessionEntry';
 import { formatDateMDY } from '@/utils/dateutil';
-import { getSessionsByUserAndYear } from '@/utils/sessionutils';
+import { deleteSession, getSessionsByUserAndYear } from '@/utils/sessionutil';
 import { msToMinutes, to12HourTime } from '@/utils/timeutil';
 import { isCurrentYear } from '@/utils/yearutils';
 import { useFocusEffect } from '@react-navigation/native';
@@ -157,6 +157,46 @@ export default function SessionsScreen() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!selectedSession) return;
+    // Confirm delete
+    const confirmed = await new Promise((resolve) => {
+      // Use native confirm dialog
+      if (typeof window !== 'undefined' && window.confirm) {
+        resolve(window.confirm('Are you sure you want to delete this session?'));
+      } else {
+        // Fallback for React Native
+        import('react-native').then(({ Alert }) => {
+          Alert.alert(
+            'Delete Session',
+            'Are you sure you want to delete this session?',
+            [
+              { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+              { text: 'Delete', style: 'destructive', onPress: () => resolve(true) },
+            ],
+            { cancelable: true }
+          );
+        });
+      }
+    });
+    if (!confirmed) return;
+    try {
+      await deleteSession(selectedSession.SessionId);
+      // Refresh sessions
+      if (user?.id && selectedYear?.JewishYear) {
+        const data = await getSessionsByUserAndYear(user.id, selectedYear.JewishYear);
+        setSessions(data || []);
+        // Select last session if any
+        const lastIndex = (data && data.length > 0) ? data.length - 1 : 0;
+        setSelectedIndex(lastIndex);
+      }
+    } catch (e) {
+      import('react-native').then(({ Alert }) => {
+        Alert.alert('Error', 'Failed to delete session.');
+      });
+    }
+  };
+
 
   const selectedSession = sessions[selectedIndex];
 
@@ -186,7 +226,7 @@ export default function SessionsScreen() {
                 style={[styles.button, styles.editButton]} onPress={handleEdit}>
                   <Text style={styles.buttonText}>Edit</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.button, styles.deleteButton]}>
+                <TouchableOpacity style={[styles.button, styles.deleteButton]} onPress={handleDelete}>
                   <Text style={styles.buttonText}>Delete</Text>
                 </TouchableOpacity>
               </View>
