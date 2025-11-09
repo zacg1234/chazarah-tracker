@@ -129,6 +129,7 @@ const handleTimeChange = (_event: any, selected?: Date) => {
     setSessionLength('');
     setNote('');
     if (onSubmit) onSubmit();
+    Alert.alert('Success', `Session Submitted: ${sessionLength} min.`);
   };
 
   return (

@@ -27,12 +27,12 @@ const WheelItem = ({
   item,
   index,
   scrollY,
-  isActive,
+  IsActive,
 }: {
   item: any;
   index: number;
   scrollY: SharedValue<number>;
-  isActive: boolean;
+  IsActive: boolean;
 }) => {
   const animatedStyle = useAnimatedStyle(() => {
     const position = index * ITEM_HEIGHT - scrollY.value;
@@ -61,9 +61,9 @@ const WheelItem = ({
   });
 
   return (
-    <Animated.View style={[styles.itemContainer, animatedStyle, isActive && styles.itemActive]}>
-      <Text style={[styles.itemText, isActive && styles.itemTextActive]}>{formatDateMDY(item.startTime)}</Text>
-      <Text style={[styles.subText, isActive && styles.subTextActive]}>{msToMinutes(item.duration)}</Text>
+    <Animated.View style={[styles.itemContainer, animatedStyle, IsActive && styles.itemActive]}>
+      <Text style={[styles.itemText, IsActive && styles.itemTextActive]}>{formatDateMDY(item.startTime)}</Text>
+      <Text style={[styles.subText, IsActive && styles.subTextActive]}>{msToMinutes(item.duration)}</Text>
     </Animated.View>
   );
 };
@@ -84,12 +84,12 @@ export default function SessionsScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
-      let isActive = true;
+      let IsActive = true;
       async function fetchSessions() {
         if (user?.id && selectedYear?.JewishYear) {
           try {
             const data = await getSessionsByUserAndYear(user.id, selectedYear.JewishYear);
-            if (isActive) {
+            if (IsActive) {
               setSessions(data || []);
               const lastIndex = (data && data.length > 0) ? data.length - 1 : 0;
               setSelectedIndex(lastIndex);
@@ -102,13 +102,13 @@ export default function SessionsScreen() {
             
             }
           } catch (e) {
-            if (isActive) {
+            if (IsActive) {
               setSessions([]);
               setSelectedIndex(0);
             }
           }
         } else {
-          if (isActive) {
+          if (IsActive) {
             setSessions([]);
             setSelectedIndex(0);
           }
@@ -116,7 +116,7 @@ export default function SessionsScreen() {
       }
       fetchSessions();
       return () => {
-        isActive = false;
+        IsActive = false;
       };
     }, [user, selectedYear])
   );
@@ -257,7 +257,7 @@ export default function SessionsScreen() {
               }}
               index={index}
               scrollY={scrollY}
-              isActive={index === selectedIndex}
+              IsActive={index === selectedIndex}
             />
           )}
           showsVerticalScrollIndicator={false}

@@ -1,6 +1,7 @@
 import { supabase } from '@/services/supabaseClient';
 import type { Session } from '@/types/session';
 import type { Year } from '@/types/year';
+import { router } from 'expo-router';
 
 // CREATE
 export async function createSession(session: Omit<Session, 'SessionId'>, year: Year) {
@@ -11,6 +12,7 @@ export async function createSession(session: Omit<Session, 'SessionId'>, year: Y
       .select()
       .single();
     if (error) throw error;
+    router.replace('/obligation');
     return data as Session;
   }
 }

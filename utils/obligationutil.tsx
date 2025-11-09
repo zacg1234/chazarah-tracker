@@ -1,6 +1,8 @@
 import { supabase } from '@/services/supabaseClient';
 import type { Obligation } from '@/types/obligation';
+import type { QuarterTurnOut } from '@/types/QuarterTurnOut';
 import { Year } from '@/types/year';
+import { Alert } from 'react-native';
 import { getSumPaymentsBetweenDates } from './paymentutil';
 import { getSessionsByUserBetweenDates } from './sessionutil';
 import { getQuartersForYear } from './yearutils';
@@ -15,12 +17,11 @@ export async function getObligationByUserAndYear(UserId: string, YearId: number)
 		.maybeSingle();
 	if (error) throw error;
 	 if (!data) {
-        // Provide sensible defaults for your app
+        Alert.alert('No Obligation Found', 'No Obligation was found for you for the selected year.');
         return {
             UserId,
             YearId,
             ObligationPerWeek: 0,
-            // ...add any other required fields with defaults
         } as Obligation;
     }
     return data as Obligation;
@@ -39,40 +40,35 @@ export function getWeeksBetween(startDate: string, endDate: string): number {
     return days / 7;
 }
 
-type QuarterTurnOutRecord = {
-    isActive: boolean;
-    MinutesOwed: number;
-    MinutesChazered: number;
-    AmountPaid: number;
-};
+
 
 export async function getUserQuarterTurnOut(
   UserId: string,
   Year: Year,
-  quarter: [string, string],
+  quarter: [string, string, number], // StartDate, EndDate, QuarterIndex
   obligation: Obligation
-): Promise<QuarterTurnOutRecord> {
+): Promise<QuarterTurnOut> {
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
     // Future quarter: today is before quarter start
     if (todayStr < quarter[0]) {
         return {
-            isActive: false,
+            QuarterIndex: quarter[2],
+            QuarterStart: quarter[0],
+            QuarterEnd: quarter[1],
+            IsActive: false,
             MinutesOwed: 0,
             MinutesChazered: 0,
-            AmountPaid: 0
+            AmountPaid: 0,
+            FinalAmountOwed: 0
         };
     }
 
     // Set the quarter end date to today or quarter[1], whichever is earlier
     const effectiveEndStr = todayStr < quarter[1] ? todayStr : quarter[1];
-    
-    console.log(`Quarter Start Date: ${quarter[0]}`);
-    console.log(`Quarter End Date: ${quarter[1]}`);
-    console.log(`Effective End Date: ${effectiveEndStr}`);
     // Get sessions in this quarter
     const sessions = await getSessionsByUserBetweenDates(UserId, quarter[0], effectiveEndStr);
-    console.log(`Sessions in Quarter: ${sessions.length}`);
+   
     let totalMinutesChazered = 0;
     for (const session of sessions) {
         totalMinutesChazered += session.SessionLength;
@@ -86,15 +82,24 @@ export async function getUserQuarterTurnOut(
     // Get amount paid in this quarter
     const amountPaid = await getSumPaymentsBetweenDates(UserId, quarter[0], effectiveEndStr);
 
-    return {
-        isActive: true,
-        MinutesOwed: minutesOwed,
-        MinutesChazered: totalMinutesChazered,
-        AmountPaid: amountPaid
-    };
-}
+    let finalAmountOwed = 0;
+    if (todayStr > quarter[1]) {  // If the quarter has ended
+        finalAmountOwed = minutesOwed - totalMinutesChazered - amountPaid;
+    }
 
-export async function getUserQuarters(UserId: string, Year: Year): Promise<QuarterTurnOutRecord[]> { 
+   return {
+            QuarterIndex: quarter[2],
+            QuarterStart: quarter[0],
+            QuarterEnd: quarter[1],
+            IsActive: true,
+            MinutesOwed: minutesOwed,
+            MinutesChazered: totalMinutesChazered,
+            AmountPaid: amountPaid,
+            FinalAmountOwed: finalAmountOwed
+        };
+};
+
+export async function getUserQuarters(UserId: string, Year: Year): Promise<QuarterTurnOut[]> { 
     // Get the user's weekly obligation
     const obligation = await getObligationByUserAndYear(UserId, Year.JewishYear);
     
@@ -105,5 +110,7 @@ export async function getUserQuarters(UserId: string, Year: Year): Promise<Quart
         quarters.map(q => getUserQuarterTurnOut(UserId, Year, q, obligation))
     );
 
+    // Sort by QuarterIndex
+    quarterTurnOuts.sort((a, b) => a.QuarterIndex - b.QuarterIndex);
     return quarterTurnOuts;
 }

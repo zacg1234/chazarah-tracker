@@ -152,7 +152,7 @@ export default function Stopwatch() {
         }, selectedYear);
         setNoteModalVisible(false);
         handleReset();
-        Alert.alert('Submit', `Elapsed time: ${formatTime(elapsed)}`);
+        Alert.alert('Success', `Session Submitted: ${formatTime(elapsed)} min.`);
     };
 
     if (!fontLoaded) {
@@ -252,21 +252,36 @@ export default function Stopwatch() {
                 multiline
                 autoFocus
             />
-            <TouchableOpacity
-                style={{
-                    backgroundColor: '#007bff',
-                    paddingVertical: 10,
-                    paddingHorizontal: 18,
-                    borderRadius: 8,
-                    minWidth: 90,
-                    alignItems: 'center',
-                }}
-                onPress={handleFinalSubmit}
-            >
-                <Text style={{ color: '#fff', fontWeight: 'bold' }}>
-                    {note.trim() === '' ? 'Skip' : 'Submit'}
-                </Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+                <TouchableOpacity
+                    style={{
+                        backgroundColor: '#6c757d',
+                        paddingVertical: 10,
+                        paddingHorizontal: 18,
+                        borderRadius: 8,
+                        minWidth: 90,
+                        alignItems: 'center',
+                    }}
+                    onPress={() => setNoteModalVisible(false)}
+                >
+                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={{
+                        backgroundColor: '#007bff',
+                        paddingVertical: 10,
+                        paddingHorizontal: 18,
+                        borderRadius: 8,
+                        minWidth: 90,
+                        alignItems: 'center',
+                    }}
+                    onPress={handleFinalSubmit}
+                >
+                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>
+                        {note.trim() === '' ? 'Skip' : 'Submit'}
+                    </Text>
+                </TouchableOpacity>
+            </View>
         </View>
     </View>
 </Modal>

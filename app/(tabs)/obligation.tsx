@@ -1,3 +1,4 @@
+import { formatDateMDY } from '@/utils/dateutil';
 import { getUserQuarters } from '@/utils/obligationutil';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useContext, useState } from 'react';
@@ -12,27 +13,26 @@ export default function ObligationScreen() {
 
     useFocusEffect(
     React.useCallback(() => {
-      let isActive = true;
+      let IsActive = true;
       const fetchData = async () => {
         setLoading(true);
         if (user?.id && year) {
           const data = await getUserQuarters(user.id, year);
-          if (isActive) setQuarters(data);
+          if (IsActive) setQuarters(data);
         } else {
-          if (isActive) setQuarters([]);
+          if (IsActive) setQuarters([]);
         }
-        if (isActive) setLoading(false);
+        if (IsActive) setLoading(false);
       };
       fetchData();
-      return () => { isActive = false; };
+      return () => { IsActive = false; };
     }, [user, year])
   );
 
   // Find the last active quarter
-  const lastActiveQuarter = quarters.slice().reverse().find(q => q.isActive);
+  const lastActiveQuarter = quarters.slice().reverse().find(q => q.IsActive);
   const totalOwed = lastActiveQuarter
-    ? Math.max(0, Math.round(lastActiveQuarter.MinutesOwed - lastActiveQuarter.MinutesChazered))
-    : 0;
+    ? Math.round(lastActiveQuarter.MinutesOwed - lastActiveQuarter.MinutesChazered): 0;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -40,16 +40,27 @@ export default function ObligationScreen() {
         <Text style={styles.loading}>Loading...</Text>
       ) : (
         <>
-          <Text style={styles.totalOwed}>
-            Minutes Owed (Current Quarter): <Text style={styles.owedValue}>{totalOwed}</Text>
-          </Text>
+        <View style={styles.owedBox}>
+          <Text style={[styles.owedTitle, { color: totalOwed > 0 ? '#d32f2f' : '#388e3c' }]}>Minutes Owed (Current Quarter)</Text>
+          <Text style={[styles.owedValue, { color: totalOwed > 0 ? '#d32f2f' : '#388e3c' }]}>{totalOwed}</Text>
+        </View>
           {quarters.map((q, idx) =>
-            q.isActive ? (
+            q.IsActive ? (
               <View key={idx} style={styles.quarterBox}>
-                <Text style={styles.quarterTitle}>Quarter {idx + 1}</Text>
+                <View style={styles.quarterHeaderRow}>
+                  <Text style={styles.quarterTitle}>Quarter {q.QuarterIndex}</Text>
+                  <Text style={styles.quarterDates}>
+                    ({formatDateMDY(q.QuarterStart)}   -   {formatDateMDY(q.QuarterEnd)})
+                  </Text>
+                </View>
                 <Text style={styles.detail}>Minutes Owed: <Text style={styles.value}>{Math.round(q.MinutesOwed)}</Text></Text>
                 <Text style={styles.detail}>Minutes Chazered: <Text style={styles.value}>{Math.round(q.MinutesChazered)}</Text></Text>
                 <Text style={styles.detail}>Amount Paid: <Text style={styles.value}>${q.AmountPaid.toFixed(2)}</Text></Text>
+                {q.FinalAmountOwed !== 0 && (
+                  <Text style={[styles.detail, { color: q.FinalAmountOwed > 0 ? '#d32f2f' : '#388e3c' }]}> 
+                    Final Amount Owed: <Text style={[styles.value, { color: q.FinalAmountOwed > 0 ? '#d32f2f' : '#388e3c' }]}>${q.FinalAmountOwed.toFixed(2)}</Text>
+                  </Text>
+                )}        
               </View>
             ) : null
           )}
@@ -63,8 +74,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8f9fa' },
   content: { padding: 20 },
   header: { fontSize: 26, fontWeight: 'bold', marginBottom: 18, color: '#2c3e50', textAlign: 'center' },
-  totalOwed: { fontSize: 20, fontWeight: 'bold', color: '#d32f2f', marginBottom: 24, textAlign: 'center' },
-  owedValue: { color: '#d32f2f', fontSize: 28 },
+  owedBox: { alignItems: 'center', marginBottom: 24 },
+  owedTitle: { fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 2 },
+  owedValue: { fontSize: 32, fontWeight: 'bold', textAlign: 'center' },
   loading: { textAlign: 'center', marginTop: 40, fontSize: 18 },
   quarterBox: {
     backgroundColor: '#fff',
@@ -80,4 +92,19 @@ const styles = StyleSheet.create({
   quarterTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 8, color: '#007bff' },
   detail: { fontSize: 16, marginBottom: 4 },
   value: { fontWeight: 'bold', color: '#2c3e50' },
+  quarterHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  quarterDates: {
+    fontSize: 13,
+    fontWeight: '400',
+    color: '#222',
+    marginBottom: 6,
+    textAlign: 'right',
+    letterSpacing: 0.2,
+    flexShrink: 1,
+  },
 });
