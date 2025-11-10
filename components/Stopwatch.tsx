@@ -107,11 +107,20 @@ export default function Stopwatch() {
         }
     };
 
-    // ✅ Reset
+    // ✅ Reset with confirmation
     const handleReset = () => {
-        setIsRunning(false);
-        setElapsed(0);
-        setStartTimestamp(null);
+        Alert.alert(
+            'Reset Timer',
+            'Are you sure you want to reset the timer?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Reset', style: 'destructive', onPress: () => {
+                    setIsRunning(false);
+                    setElapsed(0);
+                    setStartTimestamp(null);
+                } }
+            ]
+        );
     };
 
     // ✅ Submit
@@ -151,7 +160,9 @@ export default function Stopwatch() {
             SessionStartTime: sessionStartTime,
         }, selectedYear);
         setNoteModalVisible(false);
-        handleReset();
+        setIsRunning(false);
+        setElapsed(0);
+        setStartTimestamp(null);
         Alert.alert('Success', `Session Submitted: ${formatTime(elapsed)} min.`);
     };
 

@@ -32,7 +32,7 @@ export default function ObligationScreen() {
   // Find the last active quarter
   const lastActiveQuarter = quarters.slice().reverse().find(q => q.IsActive);
   const totalOwed = lastActiveQuarter
-    ? Math.round(lastActiveQuarter.MinutesOwed - lastActiveQuarter.MinutesChazered): 0;
+    ? Math.ceil(lastActiveQuarter.MinutesOwed - lastActiveQuarter.MinutesChazered): 0;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -53,8 +53,8 @@ export default function ObligationScreen() {
                     ({formatDateMDY(q.QuarterStart)}   -   {formatDateMDY(q.QuarterEnd)})
                   </Text>
                 </View>
-                <Text style={styles.detail}>Minutes Owed: <Text style={styles.value}>{Math.round(q.MinutesOwed)}</Text></Text>
-                <Text style={styles.detail}>Minutes Chazered: <Text style={styles.value}>{Math.round(q.MinutesChazered)}</Text></Text>
+                <Text style={styles.detail}>Minutes Owed: <Text style={styles.value}>{Math.ceil(q.MinutesOwed)}</Text></Text>
+                <Text style={styles.detail}>Minutes Chazered: <Text style={styles.value}>{Math.floor(q.MinutesChazered)}</Text></Text>
                 <Text style={styles.detail}>Amount Paid: <Text style={styles.value}>${q.AmountPaid.toFixed(2)}</Text></Text>
                 {q.FinalAmountOwed !== 0 && (
                   <Text style={[styles.detail, { color: q.FinalAmountOwed > 0 ? '#d32f2f' : '#388e3c' }]}> 

@@ -1,11 +1,11 @@
 import type { Year } from '@/types/year';
-import { getLoggedInUser, handleLogout } from '@/utils/authutil';
+import { getLoggedInUser } from '@/utils/authutil';
 import { fetchYears, getCurrentYear } from '@/utils/yearutils';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import { Tabs, useRouter } from 'expo-router';
 import { createContext, useEffect, useState } from 'react';
-import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, TouchableOpacity, View } from 'react-native';
 
 
 export const YearContext = createContext<Year | null>(null);
@@ -82,19 +82,18 @@ export default function TabsLayout() {
                 </View>
               ),
 
-            // 🔹 Logout button
+            // 🔹 Profile icon button
             headerRight: () => (
               <TouchableOpacity
-                onPress={() => handleLogout(router)}
+                onPress={() => router.push('/modal/profile')}
                 style={{
                   marginRight: 10,
-                  //backgroundColor: '#e74c3c',
                   paddingVertical: 6,
                   paddingHorizontal: 12,
                   borderRadius: 6,
                 }}
               >
-                <Text style={{ color: '#e74c3c', fontWeight: '600' }}>Logout</Text>
+                <Ionicons name="person-circle-outline" size={28} color="#2c3e50" />
               </TouchableOpacity>
             ),
 
@@ -104,7 +103,7 @@ export default function TabsLayout() {
 
               if (route.name === 'chazarah') iconName = 'time-outline';
               else if (route.name === 'sessions') iconName = 'list-outline';
-              else iconName = 'person-outline';
+              else iconName = 'trophy-outline';
 
               return <Ionicons name={iconName} size={size} color={color} />;
             },

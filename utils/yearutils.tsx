@@ -37,7 +37,7 @@ export const isCurrentYear = (year: Year | null) => {
 // Returns the quarters with their start and end dates along with quarter index
 export function getQuartersForYear(year: Year): [string, string, number][] {
   // Use local time for all calculations
-  const start = setStartOfDay(addDays(new Date(year.StartDate), 2));
+  const start = setStartOfDay(addDays(new Date(year.StartDate), 1));
   const end = setEndOfDay(new Date(year.EndDate));
   if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) return [];
 
