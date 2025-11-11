@@ -171,6 +171,7 @@ const handleTimeChange = (_event: any, selected?: Date) => {
             keyboardType="numeric"
             value={sessionLength}
             onChangeText={setSessionLength}
+            placeholderTextColor={"#818181ff"}
           />
           <TextInput
             style={[styles.input, { height: 60 }]}
@@ -178,6 +179,7 @@ const handleTimeChange = (_event: any, selected?: Date) => {
             value={note}
             onChangeText={setNote}
             multiline
+            placeholderTextColor={"#818181ff"}
           />
           <View style={styles.buttonRow}>
             <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onClose}>

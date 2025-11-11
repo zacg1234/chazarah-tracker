@@ -95,10 +95,18 @@ export default function SessionsScreen() {
               setSelectedIndex(lastIndex);
             
               setTimeout(() => {
-              if (flatListRef.current && data && data.length > 0) {
-                flatListRef.current.scrollToIndex({ index: lastIndex, animated: false });
-              }
-            }, 0);
+                try {
+                  if (flatListRef.current && data && data.length > 0) {
+                    flatListRef.current.scrollToIndex({ index: lastIndex, animated: false });
+                  }
+                } catch (err) {
+                  // On web, scrollToIndex can throw if layout not ready; fall back to offset
+                  flatListRef.current?.scrollToOffset({
+                    offset: ITEM_HEIGHT * lastIndex,
+                    animated: false,
+                  });
+                }
+              }, 0);
             
             }
           } catch (e) {
@@ -271,7 +279,8 @@ export default function SessionsScreen() {
             offset: ITEM_HEIGHT * index,
             index,
           })}
-          initialScrollIndex={selectedIndex}
+          // Only set initialScrollIndex when we actually have items
+          initialScrollIndex={sessions.length > 0 ? selectedIndex : undefined}
           onScrollToIndexFailed={(info) => {
             flatListRef.current?.scrollToOffset({
               offset: ITEM_HEIGHT * info.index,

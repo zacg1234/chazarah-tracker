@@ -60,6 +60,7 @@ export default function ProfileModal() {
                                     onChangeText={setFirstname}
                                     placeholder="First name"
                                     autoCapitalize="words"
+                                    placeholderTextColor={"#6c6c6cff"}
                                 />
                             </View>
 
@@ -71,18 +72,21 @@ export default function ProfileModal() {
                                     onChangeText={setLastname}
                                     placeholder="Last name"
                                     autoCapitalize="words"
+                                    placeholderTextColor={"#6c6c6cff"}
                                 />
                             </View>
 
                             <View style={styles.fieldContainer}>
-                                <Text style={styles.label}>Email</Text>
+                                <Text style={styles.label}>Email (read-only)</Text>
                                 <TextInput
-                                    style={styles.input}
+                                    style={[styles.input, styles.inputDisabled]}
                                     value={email}
+                                    editable={false}
                                     onChangeText={setEmail}
                                     placeholder="name@example.com"
                                     keyboardType="email-address"
                                     autoCapitalize="none"
+                                    placeholderTextColor={"#6c6c6cff"}
                                 />
                             </View>
 
@@ -93,6 +97,7 @@ export default function ProfileModal() {
                                     value={password}
                                     onChangeText={setPassword}
                                     placeholder="New password"
+                                    placeholderTextColor={"#6c6c6cff"}
                                 />
                             </View>
 
@@ -192,5 +197,11 @@ const styles = StyleSheet.create({
         marginBottom: 18,
         fontSize: 17,
         color: '#222',
+    },
+    // Add to StyleSheet:
+    inputDisabled: {
+        backgroundColor: '#cfd1d2ff',
+        color: '#555',
+        borderColor: '#d0d4d8',
     },
 });

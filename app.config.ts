@@ -2,7 +2,7 @@ import type { ExpoConfig } from 'expo/config';
 
 export default ({ config }: { config: ExpoConfig }) => ({
   ...config,
-  name: 'chazarah-tracker',
+  name: 'Chazarah Tracker',
   slug: 'chazarah-tracker',
   owner: 'zacg1234',
   scheme: 'chazarahtracker',

@@ -17,7 +17,8 @@ export async function handleLogin(email: string, password: string, router: Route
         if (error) {
             Alert.alert('Login Failed', error.message);
         } else {
-            router.replace('/chazarah');
+            // Navigate into the tabs navigator explicitly
+            router.replace('/(tabs)/chazarah');
         }
     } finally {
         setLoading?.(false);

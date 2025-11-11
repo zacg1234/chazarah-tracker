@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "chazarah-tracker",
-    "slug": "chazarah-tracker",
+    "name": "Chazarah Tracker",
+    "slug": "Chazarah Tracker",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/AALogoSmall.png",
     "scheme": "chazarahtracker",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
@@ -15,7 +15,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/AALogoSmall.png",
-        "backgroundColor": "#FFFFFF"
+        "backgroundColor": "#000000"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -32,7 +32,7 @@
         {
           "image": "./assets/images/AALogoSmall.png",
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#000000"
         }
       ]
     ],

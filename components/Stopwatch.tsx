@@ -114,17 +114,19 @@ export default function Stopwatch() {
             'Are you sure you want to reset the timer?',
             [
                 { text: 'Cancel', style: 'cancel' },
-                { text: 'Reset', style: 'destructive', onPress: () => {
-                    setIsRunning(false);
-                    setElapsed(0);
-                    setStartTimestamp(null);
-                } }
+                {
+                    text: 'Reset', style: 'destructive', onPress: () => {
+                        setIsRunning(false);
+                        setElapsed(0);
+                        setStartTimestamp(null);
+                    }
+                }
             ]
         );
     };
 
     // ✅ Submit
-     const handleSubmit = async () => {
+    const handleSubmit = async () => {
         if (!selectedYear) {
             Alert.alert('Error', 'No year selected.');
             return;
@@ -133,7 +135,7 @@ export default function Stopwatch() {
             Alert.alert('Error', 'No user logged in.');
             return;
         }
-        setIsRunning(false); 
+        setIsRunning(false);
         setNote('');
         setNoteModalVisible(true);
     };
@@ -226,76 +228,77 @@ export default function Stopwatch() {
             </View>
             {/* Note Modal */}
             <Modal
-    visible={noteModalVisible}
-    transparent
-    animationType="fade"
-    onRequestClose={() => setNoteModalVisible(false)}
->
-    <View style={{
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.3)',
-        justifyContent: 'center',
-        alignItems: 'center'
-    }}>
-        <View style={{
-            backgroundColor: '#fff',
-            borderRadius: 14,
-            padding: 24,
-            width: 300,
-            alignItems: 'center'
-        }}>
-            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>
-                Add a note (optional)
-            </Text>
-            <TextInput
-                style={{
-                    borderWidth: 1,
-                    borderColor: '#ccc',
-                    borderRadius: 8,
-                    padding: 10,
-                    width: '100%',
-                    marginBottom: 18,
-                    fontSize: 16,
-                }}
-                placeholder="Type a note..."
-                value={note}
-                onChangeText={setNote}
-                multiline
-                autoFocus
-            />
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-                <TouchableOpacity
-                    style={{
-                        backgroundColor: '#6c757d',
-                        paddingVertical: 10,
-                        paddingHorizontal: 18,
-                        borderRadius: 8,
-                        minWidth: 90,
-                        alignItems: 'center',
-                    }}
-                    onPress={() => setNoteModalVisible(false)}
-                >
-                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={{
-                        backgroundColor: '#007bff',
-                        paddingVertical: 10,
-                        paddingHorizontal: 18,
-                        borderRadius: 8,
-                        minWidth: 90,
-                        alignItems: 'center',
-                    }}
-                    onPress={handleFinalSubmit}
-                >
-                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>
-                        {note.trim() === '' ? 'Skip' : 'Submit'}
-                    </Text>
-                </TouchableOpacity>
-            </View>
-        </View>
-    </View>
-</Modal>
+                visible={noteModalVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setNoteModalVisible(false)}
+            >
+                <View style={{
+                    flex: 1,
+                    backgroundColor: 'rgba(0,0,0,0.3)',
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                }}>
+                    <View style={{
+                        backgroundColor: '#fff',
+                        borderRadius: 14,
+                        padding: 24,
+                        width: 300,
+                        alignItems: 'center'
+                    }}>
+                        <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>
+                            Add a note (optional)
+                        </Text>
+                        <TextInput
+                            style={{
+                                borderWidth: 1,
+                                borderColor: '#ccc',
+                                borderRadius: 8,
+                                padding: 10,
+                                width: '100%',
+                                marginBottom: 18,
+                                fontSize: 16,
+                            }}
+                            placeholder="Type a note..."
+                            value={note}
+                            onChangeText={setNote}
+                            multiline
+                            autoFocus
+                            placeholderTextColor={"#818181ff"}
+                        />
+                        <View style={{ flexDirection: 'row', gap: 12 }}>
+                            <TouchableOpacity
+                                style={{
+                                    backgroundColor: '#6c757d',
+                                    paddingVertical: 10,
+                                    paddingHorizontal: 18,
+                                    borderRadius: 8,
+                                    minWidth: 90,
+                                    alignItems: 'center',
+                                }}
+                                onPress={() => setNoteModalVisible(false)}
+                            >
+                                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={{
+                                    backgroundColor: '#007bff',
+                                    paddingVertical: 10,
+                                    paddingHorizontal: 18,
+                                    borderRadius: 8,
+                                    minWidth: 90,
+                                    alignItems: 'center',
+                                }}
+                                onPress={handleFinalSubmit}
+                            >
+                                <Text style={{ color: '#fff', fontWeight: 'bold' }}>
+                                    {note.trim() === '' ? 'Skip' : 'Submit'}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -354,7 +357,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     submitText: {
-        lineHeight: 32, 
+        lineHeight: 32,
         textAlignVertical: 'center',
     },
     iconCenter: {
