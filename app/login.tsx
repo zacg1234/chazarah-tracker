@@ -36,7 +36,7 @@ export default function Login() {
             resizeMode="contain"
           />
 
-          <Text style={styles.title}>Chazarah Tracker</Text>
+          <Text style={styles.title}>CHAZARAH TRACKER</Text>
 
           <TextInput
             style={styles.input}
@@ -71,7 +71,7 @@ export default function Login() {
 const styles = StyleSheet.create({
   container: { width: '90%', alignItems: 'center' },
   logo: { width: 320, height: 60, marginBottom: 4 }, // ensure the image is visible
-  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 20, color: '#ae9e37ff' },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, marginTop: 20, color: '#b39d0eff' },
   input: { width: '100%', borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, marginVertical: 8 },
   button: { backgroundColor: '#007AFF', padding: 15, borderRadius: 8, width: '100%', alignItems: 'center', marginTop: 10 },
   buttonText: { color: 'white', fontWeight: 'bold' },

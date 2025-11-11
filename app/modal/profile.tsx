@@ -45,7 +45,7 @@ export default function ProfileModal() {
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             >
                 <ScrollView
-                    contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16 }}
+                    contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center' }}
                     keyboardShouldPersistTaps="handled"
                 >
                     <View style={styles.container}>
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
         position: 'relative',
     },
     fieldContainer: {
-        width: 325,
+        width: '100%',
         marginBottom: 12,
     },
     label: {
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
     input: {
-        width: 300,
+        width: 330,
         paddingVertical: 14,
         paddingHorizontal: 16,
         backgroundColor: '#f7f8fa',
