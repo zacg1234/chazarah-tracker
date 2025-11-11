@@ -9,16 +9,17 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.zacg1234.chazarahtracker"
     },
     "android": {
       "adaptiveIcon": {
-        "image": "./assets/images/AALogoSmall.png",
-        "resizeMode": "contain",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/images/AALogoSmall.png",
+        "backgroundColor": "#FFFFFF"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.zacg1234.chazarahtracker"
     },
     "web": {
       "output": "static",
@@ -29,11 +30,9 @@
       [
         "expo-splash-screen",
         {
-          "adaptiveIcon": {
-            "image": "./assets/images/AALogoSmall.png",
-            "resizeMode": "contain",
-            "backgroundColor": "#ffffff"
-          }
+          "image": "./assets/images/AALogoSmall.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
         }
       ]
     ],
@@ -44,7 +43,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "e58f4b34-20b3-4681-9ba8-6126866c0e9d"
+        "projectId": "70d8dbbd-2779-473f-86d5-f8a8ed1bed33"
       }
     }
   }
