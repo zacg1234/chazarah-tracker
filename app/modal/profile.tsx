@@ -1,4 +1,4 @@
-import { getLoggedInUser, updateLoggedInUserProfile } from '@/utils/authutil';
+import { getLoggedInUser, handleLogout, updateLoggedInUserProfile } from '@/utils/authutil';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -41,17 +41,21 @@ export default function ProfileModal() {
             </View>
         ) : (
             <KeyboardAvoidingView
-                style={{ flex: 1 }}
+                style={{ flex: 1, backgroundColor: '#FFFFFF' }}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             >
+                <View style={styles.topHeader}>
+                    <Text style={styles.topHeaderTitle}>Edit Profile</Text>
+                    <TouchableOpacity style={styles.topHeaderAction} onPress={async () => await handleLogout(router)}>
+                        <Text style={styles.topHeaderActionText}>Logout</Text>
+                    </TouchableOpacity>
+                </View>
                 <ScrollView
                     contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center' }}
                     keyboardShouldPersistTaps="handled"
                 >
                     <View style={styles.container}>
                         <View>
-                            <Text style={styles.header}>Edit Profile</Text>
-
                             <View style={styles.fieldContainer}>
                                 <Text style={styles.label}>First Name</Text>
                                 <TextInput
@@ -122,9 +126,33 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(255,255,255,0.9)', // slightly transparent white overlay
+        backgroundColor: 'rgba(255, 255, 255, 1)', // slightly transparent white overlay
         padding: 24,
         position: 'relative',
+    },
+    topHeader: {
+        height: 100,
+        backgroundColor: '#FFFFFF',
+        borderBottomColor: '#aeaeaeff',
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingBottom: 8,
+    },
+    topHeaderTitle: {
+        fontSize: 20,
+        fontWeight: '800',
+        color: '#111827',
+    },
+    topHeaderAction: {
+        width: 60,
+    },
+    topHeaderActionText: {
+        color: '#ef4444', // red accent for logout
+        fontSize: 16,
+        fontWeight: '600',
     },
     fieldContainer: {
         width: '100%',
@@ -180,11 +208,6 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: 'bold',
         fontSize: 16,
-    },
-    header: {
-        fontSize: 30,
-        fontWeight: 'bold',
-        marginBottom: 24,
     },
     input: {
         width: 330,

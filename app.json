@@ -4,7 +4,7 @@
     "slug": "Chazarah Tracker",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/AALogoSmall.png",
+    "icon": "./assets/images/Chazarah_Tracker_Logo.png",
     "scheme": "chazarahtracker",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -14,8 +14,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/AALogoSmall.png",
-        "backgroundColor": "#000000"
+        "foregroundImage": "./assets/images/Chazarah_Tracker_Logo.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -23,16 +22,15 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/AALogoSmall.png"
+      "favicon": "./assets/images/Chazarah_Tracker_Favicon.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/AALogoSmall.png",
-          "resizeMode": "contain",
-          "backgroundColor": "#000000"
+          "image": "./assets/images/Chazarah_Tracker_Logo.png",
+          "resizeMode": "contain"
         }
       ]
     ],

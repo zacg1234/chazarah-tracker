@@ -1,6 +1,8 @@
+import { useAuth } from '@/providers/AuthProvider';
 import { Redirect } from 'expo-router';
 
 export default function Index() {
-  // Redirect the root path to the login screen. Change to '/(tabs)/chazarah' if you prefer landing on tabs.
-  return <Redirect href="/login" />;
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  return <Redirect href={user ? '/(tabs)/chazarah' : '/login'} />;
 }

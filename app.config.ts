@@ -7,7 +7,7 @@ export default ({ config }: { config: ExpoConfig }) => ({
   owner: 'zacg1234',
   scheme: 'chazarahtracker',
   userInterfaceStyle: 'light',
-  icon: './assets/images/AALogoSmall.png',
+  icon: './assets/images/Chazarah_Tracker_Logo.png',
   ios: {
     ...(config.ios || {}),
     bundleIdentifier: 'com.zacg1234.chazarahtracker',
@@ -17,8 +17,7 @@ export default ({ config }: { config: ExpoConfig }) => ({
     ...(config.android || {}),
     package: 'com.zacg1234.chazarahtracker',
     adaptiveIcon: {
-      foregroundImage: './assets/images/AALogoSmall.png',
-      backgroundColor: '#FFFFFF',
+      foregroundImage: './assets/images/Chazarah_Tracker_Logo.png'
     },
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
@@ -26,7 +25,7 @@ export default ({ config }: { config: ExpoConfig }) => ({
   web: {
     ...(config.web || {}),
     output: 'static',
-    favicon: './assets/images/AALogoSmall.png',
+    favicon: './assets/images/Chazarah_Tracker_Favicon.png',
   },
   extra: {
     ...(config.extra || {}),
@@ -43,9 +42,8 @@ export default ({ config }: { config: ExpoConfig }) => ({
     [
       'expo-splash-screen',
       {
-        image: './assets/images/AALogoSmall.png',
-        resizeMode: 'contain',
-        backgroundColor: '#ffffff',
+        image: './assets/images/Chazarah_Tracker_Logo.png',
+        resizeMode: 'contain'
       },
     ],
   ],
