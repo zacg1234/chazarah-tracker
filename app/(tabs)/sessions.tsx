@@ -1,13 +1,12 @@
 import ManualSessionEntry from '@/components/ManualSessionEntry';
 import { formatDateMDY } from '@/utils/dateutil';
-import { deleteSession, getSessionsByUserAndYear } from '@/utils/sessionutil';
+import { deleteSession } from '@/utils/sessionutil';
 import { msToMinutes, to12HourTime } from '@/utils/timeutil';
 import { isCurrentYear } from '@/utils/yearutils';
-import { useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Dimensions, LayoutChangeEvent, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Dimensions, LayoutChangeEvent, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
   interpolate,
   runOnJS,
@@ -16,7 +15,7 @@ import Animated, {
   useSharedValue,
   type SharedValue,
 } from 'react-native-reanimated';
-import { UserContext, YearContext } from './_layout';
+import { SessionsContext, UserContext, YearContext } from './_layout';
 
 
 const ITEM_HEIGHT = 60;
@@ -72,7 +71,7 @@ const WheelItem = ({
 export default function SessionsScreen() {
   const scrollY = useSharedValue(0);
   const flatListRef = useRef<Animated.FlatList<any>>(null);
-  const [sessions, setSessions] = useState<any[]>([]);
+  const { sessions, refreshSessions } = useContext(SessionsContext);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [wheelHeight, setWheelHeight] = useState(0);
   const [manualVisible, setManualVisible] = useState(false);
@@ -82,52 +81,23 @@ export default function SessionsScreen() {
   const selectedYear = useContext(YearContext);
   const user = useContext(UserContext);
 
-  useFocusEffect(
-    React.useCallback(() => {
-      let IsActive = true;
-      async function fetchSessions() {
-        if (user?.id && selectedYear?.JewishYear) {
-          try {
-            const data = await getSessionsByUserAndYear(user.id, selectedYear.JewishYear);
-            if (IsActive) {
-              setSessions(data || []);
-              const lastIndex = (data && data.length > 0) ? data.length - 1 : 0;
-              setSelectedIndex(lastIndex);
-            
-              setTimeout(() => {
-                try {
-                  if (flatListRef.current && data && data.length > 0) {
-                    flatListRef.current.scrollToIndex({ index: lastIndex, animated: false });
-                  }
-                } catch (err) {
-                  // On web, scrollToIndex can throw if layout not ready; fall back to offset
-                  flatListRef.current?.scrollToOffset({
-                    offset: ITEM_HEIGHT * lastIndex,
-                    animated: false,
-                  });
-                }
-              }, 0);
-            
-            }
-          } catch (e) {
-            if (IsActive) {
-              setSessions([]);
-              setSelectedIndex(0);
-            }
-          }
-        } else {
-          if (IsActive) {
-            setSessions([]);
-            setSelectedIndex(0);
-          }
+  // When sessions change (e.g., on app open or year change), scroll to the last item
+  useEffect(() => {
+    const lastIndex = sessions && sessions.length > 0 ? sessions.length - 1 : 0;
+    setSelectedIndex(lastIndex);
+    setTimeout(() => {
+      try {
+        if (flatListRef.current && sessions && sessions.length > 0) {
+          flatListRef.current.scrollToIndex({ index: lastIndex, animated: false });
         }
+      } catch (err) {
+        flatListRef.current?.scrollToOffset({
+          offset: ITEM_HEIGHT * lastIndex,
+          animated: false,
+        });
       }
-      fetchSessions();
-      return () => {
-        IsActive = false;
-      };
-    }, [user, selectedYear])
-  );
+    }, 0);
+  }, [sessions]);
 
   const wheelPadding = useMemo(() => {
     return wheelHeight > 0 ? Math.max((wheelHeight - ITEM_HEIGHT) / 2, 0) : height * 0.25;
@@ -167,41 +137,28 @@ export default function SessionsScreen() {
 
   const handleDelete = async () => {
     if (!selectedSession) return;
-    // Confirm delete
-    const confirmed = await new Promise((resolve) => {
-      // Use native confirm dialog
-      if (typeof window !== 'undefined' && window.confirm) {
+    // Confirm delete (use Alert on native, window.confirm on web)
+    const confirmed = await new Promise<boolean>((resolve) => {
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && typeof window.confirm === 'function') {
         resolve(window.confirm('Are you sure you want to delete this session?'));
-      } else {
-        // Fallback for React Native
-        import('react-native').then(({ Alert }) => {
-          Alert.alert(
-            'Delete Session',
-            'Are you sure you want to delete this session?',
-            [
-              { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
-              { text: 'Delete', style: 'destructive', onPress: () => resolve(true) },
-            ],
-            { cancelable: true }
-          );
-        });
+        return;
       }
+      Alert.alert(
+        'Delete Session',
+        'Are you sure you want to delete this session?',
+        [
+          { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+          { text: 'Delete', style: 'destructive', onPress: () => resolve(true) },
+        ],
+        { cancelable: true }
+      );
     });
     if (!confirmed) return;
     try {
       await deleteSession(selectedSession.SessionId);
-      // Refresh sessions
-      if (user?.id && selectedYear?.JewishYear) {
-        const data = await getSessionsByUserAndYear(user.id, selectedYear.JewishYear);
-        setSessions(data || []);
-        // Select last session if any
-        const lastIndex = (data && data.length > 0) ? data.length - 1 : 0;
-        setSelectedIndex(lastIndex);
-      }
+      await refreshSessions();
     } catch (e) {
-      import('react-native').then(({ Alert }) => {
-        Alert.alert('Error', 'Failed to delete session.');
-      });
+      Alert.alert('Error', 'Failed to delete session.');
     }
   };
 
@@ -322,11 +279,7 @@ export default function SessionsScreen() {
         initialSession={editSession}
         onSubmit={() => {
           // Refresh sessions after edit
-          if (user?.id && selectedYear?.JewishYear) {
-            getSessionsByUserAndYear(user.id, selectedYear.JewishYear).then((data) => {
-              setSessions(data || []);
-            });
-          }
+          refreshSessions();
         }}
       />
     </View>

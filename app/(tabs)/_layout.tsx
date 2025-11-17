@@ -1,21 +1,25 @@
 import type { Year } from '@/types/year';
 import { getLoggedInUser } from '@/utils/authutil';
+import { getSessionsByUserAndYear } from '@/utils/sessionutil';
 import { fetchYears, getCurrentYear } from '@/utils/yearutils';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import { Tabs, useRouter } from 'expo-router';
-import { createContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, TouchableOpacity, View } from 'react-native';
 
 
 export const YearContext = createContext<Year | null>(null);
 export const UserContext = createContext<any>(null);
+export const SessionsContext = createContext<{ sessions: any[]; loading: boolean; refreshSessions: () => Promise<void>; }>({ sessions: [], loading: false, refreshSessions: async () => {} });
 
 
 export default function TabsLayout() {
   const [years, setYears] = useState<Year[]>([]);
   const [selectedYear, setSelectedYear] = useState<Year | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
   //const [showPicker, setShowPicker] = useState(false);
   const [user, setUser] = useState<any>();
   const router = useRouter();
@@ -35,9 +39,31 @@ export default function TabsLayout() {
     fetchData();
   }, []);
 
+  const refreshSessions = useCallback(async () => {
+    if (user?.id && selectedYear?.JewishYear) {
+      setSessionsLoading(true);
+      try {
+        const data = await getSessionsByUserAndYear(user.id, selectedYear.JewishYear);
+        setSessions(data || []);
+      } finally {
+        setSessionsLoading(false);
+      }
+    } else {
+      setSessions([]);
+    }
+  }, [user?.id, selectedYear?.JewishYear]);
+
+  // Fetch sessions on app open and whenever user/year changes
+  useEffect(() => {
+    refreshSessions();
+  }, [refreshSessions]);
+
+  const sessionsCtxValue = useMemo(() => ({ sessions, loading: sessionsLoading, refreshSessions }), [sessions, sessionsLoading, refreshSessions]);
+
   return (
     <UserContext.Provider value={user}>
       <YearContext.Provider value={selectedYear}>
+        <SessionsContext.Provider value={sessionsCtxValue}>
         <View style={{ flex: 1 }}>
           <Tabs
             screenOptions={({ route }) => ({
@@ -119,6 +145,7 @@ export default function TabsLayout() {
             <Tabs.Screen name="obligation" options={{ title: 'Obligation' }} />
           </Tabs>
         </View>
+        </SessionsContext.Provider>
       </YearContext.Provider>
     </UserContext.Provider>
   );

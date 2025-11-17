@@ -4,6 +4,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import 'react-native-reanimated';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export const unstable_settings = {
   initialRouteName: 'login',
@@ -37,11 +38,13 @@ function RootNavigator() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <ThemeProvider value={DefaultTheme}>
-        <StatusBar style="dark" />
-        <RootNavigator />
-      </ThemeProvider>
-    </AuthProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <ThemeProvider value={DefaultTheme}>
+          <StatusBar style="dark" backgroundColor="#ffffff" translucent={false} />
+          <RootNavigator />
+        </ThemeProvider>
+      </AuthProvider>
+    </SafeAreaProvider> 
   );
 }

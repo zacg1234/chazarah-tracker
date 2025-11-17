@@ -7,7 +7,7 @@ export default ({ config }: { config: ExpoConfig }) => ({
   owner: 'zacg1234',
   scheme: 'chazarahtracker',
   userInterfaceStyle: 'light',
-  icon: './assets/images/Chazarah_Tracker_Logo.png',
+  icon: './assets/images/Chazarah_Tracker_Logo_Simple.png',
   ios: {
     ...(config.ios || {}),
     bundleIdentifier: 'com.zacg1234.chazarahtracker',
@@ -17,10 +17,17 @@ export default ({ config }: { config: ExpoConfig }) => ({
     ...(config.android || {}),
     package: 'com.zacg1234.chazarahtracker',
     adaptiveIcon: {
-      foregroundImage: './assets/images/Chazarah_Tracker_Logo.png'
+      foregroundImage: './assets/images/Chazarah_Tracker_Logo_Simple.png'
     },
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
+    statusBar: {
+      // Ensure native default matches our in-app default
+      backgroundColor: '#ffffff',
+      barStyle: 'dark-content',
+      translucent: false,
+      hidden: false,
+    },
   },
   web: {
     ...(config.web || {}),
@@ -42,7 +49,7 @@ export default ({ config }: { config: ExpoConfig }) => ({
     [
       'expo-splash-screen',
       {
-        image: './assets/images/Chazarah_Tracker_Logo.png',
+        image: './assets/images/Chazarah_Tracker_Logo_Simple.png',
         resizeMode: 'contain'
       },
     ],

@@ -1,4 +1,4 @@
-import { UserContext, YearContext } from '@/app/(tabs)/_layout';
+import { SessionsContext, UserContext, YearContext } from '@/app/(tabs)/_layout';
 import { createSession } from '@/utils/sessionutil';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -27,6 +27,7 @@ export default function Stopwatch() {
 
     const selectedYear = useContext(YearContext);
     const user = useContext(UserContext);
+    const { refreshSessions } = useContext(SessionsContext);
 
     // ✅ Load font once
     useEffect(() => {
@@ -154,19 +155,25 @@ export default function Stopwatch() {
             Alert.alert('Error', 'Session start time is missing. Please start and stop the stopwatch before submitting.');
             return;
         }
-        await createSession({
-            UserId: user.id,
-            YearId: selectedYear.JewishYear,
-            SessionLength: elapsed,
-            SessionNote: note,
-            SessionStartTime: sessionStartTime,
-        }, selectedYear);
-        setNoteModalVisible(false);
-        setIsRunning(false);
-        setElapsed(0);
-        setStartTimestamp(null);
-        Alert.alert('Success', `Session Submitted: ${formatTime(elapsed)} min.`);
-    };
+        try {
+            await createSession({
+                UserId: user.id,
+                YearId: selectedYear.JewishYear,
+                SessionLength: elapsed,
+                SessionNote: note,
+                SessionStartTime: sessionStartTime,
+            }, selectedYear);
+            // Refresh shared sessions context so other tabs update immediately
+            await refreshSessions();
+            setNoteModalVisible(false);
+            setIsRunning(false);
+            setElapsed(0);
+            setStartTimestamp(null);
+            Alert.alert('Success', `Session Submitted: ${formatTime(elapsed)} min.`);
+        } catch (e) {
+            Alert.alert('Error', 'There was an error submitting your session. Please try again.');
+        }
+    }
 
     if (!fontLoaded) {
         return <View style={styles.container}><Text>Loading...</Text></View>;

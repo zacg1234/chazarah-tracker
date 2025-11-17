@@ -1,0 +1,9 @@
+- add validtaion so users cant set date for session in the future
+
+- Fix white prompt text in text fields on sign up page
+
+- change logo to use just hourglass
+
+- adding note to manual entry (or edit) - keyboard covers text field
+
+- get sessions in _layout and only update on change

@@ -30,6 +30,7 @@ export async function getSessionById(SessionId: number) {
 
 // READ (all for user and year)
 export async function getSessionsByUserAndYear(UserId: string, YearId: number) {
+  console.log("fetching sessions");
   const { data, error } = await supabase
     .from('TblSession')
     .select('*')
@@ -52,6 +53,33 @@ export async function getSessionsByUserBetweenDates(UserId: string, startDate: s
     .order('SessionStartTime', { ascending: true });
   if (error) throw error;
   return data as Session[];
+}
+
+// Filter a given list of sessions between two dates (inclusive)
+export async function filterSessionsBetweenDates(sessions: Session[], startDate: string, endDate: string) {
+  // Normalize start/end bounds (inclusive). If only date provided, assume full-day span.
+  const normalizedStart = startDate.length === 10 ? `${startDate} 00:00:00` : startDate;
+  const normalizedEnd = endDate.length === 10 ? `${endDate} 23:59:59` : endDate;
+
+  const start = new Date(normalizedStart.replace(' ', 'T'));
+  const end = new Date(normalizedEnd.replace(' ', 'T'));
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) return [];
+
+  const filtered = sessions.filter((s) => {
+    const raw = s.SessionStartTime;
+    if (!raw) return false;
+    const d = new Date(raw.replace(' ', 'T'));
+    if (isNaN(d.getTime())) return false;
+    return d >= start && d <= end;
+  });
+
+  // Sort ascending like the DB query
+  filtered.sort((a, b) => {
+    const da = new Date(a.SessionStartTime.replace(' ', 'T')).getTime();
+    const db = new Date(b.SessionStartTime.replace(' ', 'T')).getTime();
+    return da - db;
+  });
+  return filtered;
 }
 
 // UPDATE
@@ -91,9 +119,13 @@ export const validateSessionData = (session: Partial<Session>, year: Year) => {
     const start = new Date(session.SessionStartTime);
     if (isNaN(start.getTime())) errorMsg = 'Session start time is invalid.';
     else {
+      const now = new Date();
       const yearStart = new Date(year.StartDate);
       const yearEnd = new Date(year.EndDate);
       if (isNaN(yearStart.getTime()) || isNaN(yearEnd.getTime())) errorMsg = 'Year start/end date is invalid.';
+      else if (start > now) {
+        errorMsg = 'Session start time cannot be in the future.';
+      }
       else if (start < yearStart || start > yearEnd) {
         errorMsg = `Session start time must fall within Jewish year ${year.JewishYear} (${yearStart.toLocaleDateString()} - ${yearEnd.toLocaleDateString()}).`;
       }

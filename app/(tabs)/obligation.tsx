@@ -3,11 +3,12 @@ import { getUserQuarters } from '@/utils/obligationutil';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useContext, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { UserContext, YearContext } from './_layout';
+import { SessionsContext, UserContext, YearContext } from './_layout';
 
 export default function ObligationScreen() {
   const user = useContext(UserContext);
   const year = useContext(YearContext);
+  const { sessions } = useContext(SessionsContext);
   const [quarters, setQuarters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -17,8 +18,12 @@ export default function ObligationScreen() {
       const fetchData = async () => {
         setLoading(true);
         if (user?.id && year) {
-          const data = await getUserQuarters(user.id, year);
-          if (IsActive) setQuarters(data);
+          try {
+            const quarterTurnOuts = await getUserQuarters(user.id, year, sessions);
+            if (IsActive) setQuarters(quarterTurnOuts);
+          } catch (e) {
+            if (IsActive) setQuarters([]);
+          }
         } else {
           if (IsActive) setQuarters([]);
         }
@@ -26,7 +31,7 @@ export default function ObligationScreen() {
       };
       fetchData();
       return () => { IsActive = false; };
-    }, [user, year])
+    }, [user, year, sessions])
   );
 
   // Find the last active quarter

@@ -2,7 +2,7 @@ import { UserContext, YearContext } from '@/app/(tabs)/_layout';
 import { createSession, updateSession } from '@/utils/sessionutil';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import React, { useContext, useEffect, useState } from 'react';
-import { Alert, Modal, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 type ManualSessionEntryProps = {
   visible: boolean;
@@ -117,80 +117,95 @@ const handleTimeChange = (_event: any, selected?: Date) => {
         SessionNote: note,
       }, selectedYear);
     } else {
-      await createSession({
-        UserId: user.id,
-        YearId: selectedYear.JewishYear,
-        SessionLength: Number(sessionLength) * 60000,
-        SessionNote: note,
-        SessionStartTime: sessionStartTime,
-      }, selectedYear);
+      try {
+        await createSession({
+          UserId: user.id,
+          YearId: selectedYear.JewishYear,
+          SessionLength: Number(sessionLength) * 60000,
+          SessionNote: note,
+          SessionStartTime: sessionStartTime,
+        }, selectedYear);
+        Alert.alert('Success', `Session Submitted: ${sessionLength} min.`);
+      } catch (error) {
+        Alert.alert('Error', 'Failed to submit session.');
+      }
     }
     onClose();
     setSessionLength('');
     setNote('');
     if (onSubmit) onSubmit();
-    Alert.alert('Success', `Session Submitted: ${sessionLength} min.`);
   };
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <View style={styles.formContainer}>
-          <Text style={styles.title}>
-            {mode === 'edit' ? 'Edit Session' : 'Manual Session Entry'}
-          </Text>
-          <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.inputButton}>
-            <Text style={styles.inputButtonText}>
-              Date: {date.toLocaleDateString()}
+      <KeyboardAvoidingView
+        style={styles.overlay}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.formContainer}>
+            <Text style={styles.title}>
+              {mode === 'edit' ? 'Edit Session' : 'Manual Session Entry'}
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setShowTimePicker(true)} style={styles.inputButton}>
-            <Text style={styles.inputButtonText}>
-              Time: {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </Text>
-          </TouchableOpacity>
-          {showDatePicker && (
-            <DateTimePicker
-              value={date}
-              mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={handleDateChange}
-            />
-          )}
-          {showTimePicker && (
-            <DateTimePicker
-              value={date}
-              mode="time"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={handleTimeChange}
-            />
-          )}
-          <TextInput
-            style={styles.input}
-            placeholder="Session Length (minutes)"
-            keyboardType="numeric"
-            value={sessionLength}
-            onChangeText={setSessionLength}
-            placeholderTextColor={"#818181ff"}
-          />
-          <TextInput
-            style={[styles.input, { height: 60 }]}
-            placeholder="Note (optional)"
-            value={note}
-            onChangeText={setNote}
-            multiline
-            placeholderTextColor={"#818181ff"}
-          />
-          <View style={styles.buttonRow}>
-            <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onClose}>
-              <Text style={styles.buttonText}>Cancel</Text>
+            <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.inputButton}>
+              <Text style={styles.inputButtonText}>
+                Date: {date.toLocaleDateString()}
+              </Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.button, styles.submitButton]} onPress={handleSubmit}>
-              <Text style={styles.buttonText}>{mode === 'edit' ? 'Update' : 'Submit'}</Text>
+            <TouchableOpacity onPress={() => setShowTimePicker(true)} style={styles.inputButton}>
+              <Text style={styles.inputButtonText}>
+                Time: {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </Text>
             </TouchableOpacity>
+            {showDatePicker && (
+              <DateTimePicker
+                value={date}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={handleDateChange}
+              />
+            )}
+            {showTimePicker && (
+              <DateTimePicker
+                value={date}
+                mode="time"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={handleTimeChange}
+              />
+            )}
+            <TextInput
+              style={styles.input}
+              placeholder="Session Length (minutes)"
+              keyboardType="numeric"
+              value={sessionLength}
+              onChangeText={setSessionLength}
+              placeholderTextColor={"#818181ff"}
+              returnKeyType="next"
+            />
+            <TextInput
+              style={[styles.input, styles.noteInput]}
+              placeholder="Note (optional)"
+              value={note}
+              onChangeText={setNote}
+              multiline
+              placeholderTextColor={"#818181ff"}
+            />
+            <View style={styles.buttonRow}>
+              <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onClose}>
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.button, styles.submitButton]} onPress={handleSubmit}>
+                <Text style={styles.buttonText}>{mode === 'edit' ? 'Update' : 'Submit'}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -201,6 +216,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.25)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 24,
   },
   formContainer: {
     backgroundColor: '#fff',
@@ -215,6 +236,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 18,
     textAlign: 'center',
+  },
+  noteInput: {
+    height: 60,
+    textAlignVertical: 'top',
   },
   input: {
     borderWidth: 1,

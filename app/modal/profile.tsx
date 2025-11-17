@@ -34,6 +34,8 @@ export default function ProfileModal() {
         }, setLoading);
     };
 
+    // Status bar is managed globally via Expo StatusBar in app/_layout.tsx
+
     return (
         loading ? (
             <View style={styles.container}>
@@ -131,7 +133,7 @@ const styles = StyleSheet.create({
         position: 'relative',
     },
     topHeader: {
-        height: 100,
+        height: 123,
         backgroundColor: '#FFFFFF',
         borderBottomColor: '#aeaeaeff',
         borderBottomWidth: StyleSheet.hairlineWidth,
@@ -140,6 +142,15 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         paddingBottom: 8,
+        // Shadow (iOS)
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.12,
+        shadowRadius: 8,
+        // Shadow (Android)
+        elevation: 4,
+        // Ensure it draws above the scroll content
+        zIndex: 8,
     },
     topHeaderTitle: {
         fontSize: 20,
