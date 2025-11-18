@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Font from 'expo-font';
 import { router } from 'expo-router';
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Alert, AppState, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, AppState, KeyboardAvoidingView, Modal, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 
 const STORAGE_KEY = 'chazarah_stopwatch';
@@ -245,71 +245,40 @@ export default function Stopwatch() {
                 animationType="fade"
                 onRequestClose={() => setNoteModalVisible(false)}
             >
-                <View style={{
-                    flex: 1,
-                    backgroundColor: 'rgba(0,0,0,0.3)',
-                    justifyContent: 'center',
-                    alignItems: 'center'
-                }}>
-                    <View style={{
-                        backgroundColor: '#fff',
-                        borderRadius: 14,
-                        padding: 24,
-                        width: 300,
-                        alignItems: 'center'
-                    }}>
-                        <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>
-                            Add a note (optional)
-                        </Text>
+                <KeyboardAvoidingView
+                    style={styles.modalOverlay}
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+                >
+                    <View style={styles.noteCard}>
+                        <Text style={styles.noteTitle}>Add a note (optional)</Text>
                         <TextInput
-                            style={{
-                                borderWidth: 1,
-                                borderColor: '#ccc',
-                                borderRadius: 8,
-                                padding: 10,
-                                width: '100%',
-                                marginBottom: 18,
-                                fontSize: 16,
-                            }}
+                            style={styles.noteInput}
                             placeholder="Type a note..."
                             value={note}
                             onChangeText={setNote}
                             multiline
                             autoFocus
-                            placeholderTextColor={"#818181ff"}
+                            placeholderTextColor={'#818181ff'}
                         />
-                        <View style={{ flexDirection: 'row', gap: 12 }}>
+                        <View style={styles.noteButtonsRow}>
                             <TouchableOpacity
-                                style={{
-                                    backgroundColor: '#6c757d',
-                                    paddingVertical: 10,
-                                    paddingHorizontal: 18,
-                                    borderRadius: 8,
-                                    minWidth: 90,
-                                    alignItems: 'center',
-                                }}
+                                style={[styles.noteButton, styles.noteCancel]}
                                 onPress={() => setNoteModalVisible(false)}
                             >
-                                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Cancel</Text>
+                                <Text style={styles.noteButtonText}>Cancel</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={{
-                                    backgroundColor: '#007bff',
-                                    paddingVertical: 10,
-                                    paddingHorizontal: 18,
-                                    borderRadius: 8,
-                                    minWidth: 90,
-                                    alignItems: 'center',
-                                }}
+                                style={[styles.noteButton, styles.noteSubmit]}
                                 onPress={handleFinalSubmit}
                             >
-                                <Text style={{ color: '#fff', fontWeight: 'bold' }}>
+                                <Text style={styles.noteButtonText}>
                                     {note.trim() === '' ? 'Skip' : 'Submit'}
                                 </Text>
                             </TouchableOpacity>
                         </View>
                     </View>
-                </View>
+                </KeyboardAvoidingView>
             </Modal>
         </View>
     );
@@ -375,4 +344,41 @@ const styles = StyleSheet.create({
     iconCenter: {
         textAlign: 'center',
     },
+    // Modal styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    noteCard: {
+        backgroundColor: '#fff',
+        borderRadius: 14,
+        padding: 24,
+        width: 300,
+        alignItems: 'center'
+    },
+    noteTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
+    noteInput: {
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 8,
+        padding: 10,
+        width: '100%',
+        marginBottom: 18,
+        fontSize: 16,
+        minHeight: 80,
+        textAlignVertical: 'top'
+    },
+    noteButtonsRow: { flexDirection: 'row', gap: 12 },
+    noteButton: {
+        paddingVertical: 10,
+        paddingHorizontal: 18,
+        borderRadius: 8,
+        minWidth: 90,
+        alignItems: 'center',
+    },
+    noteCancel: { backgroundColor: '#6c757d' },
+    noteSubmit: { backgroundColor: '#007bff' },
+    noteButtonText: { color: '#fff', fontWeight: 'bold' }
 });
