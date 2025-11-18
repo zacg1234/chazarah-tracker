@@ -1,7 +1,7 @@
 import { getLoggedInUser, handleLogout, updateLoggedInUserProfile } from '@/utils/authutil';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function ProfileModal() {
     const [user, setUser] = useState<any>(null);
@@ -14,27 +14,36 @@ export default function ProfileModal() {
 
     useEffect(() => {
         const fetchData = async () => {
+        try {
             setLoading(true);
             const userObj = await getLoggedInUser();
             setUser(userObj);
             setFirstname(userObj?.user_metadata?.firstname || '');
             setLastname(userObj?.user_metadata?.lastname || '');
             setEmail(userObj?.user_metadata?.email || userObj?.email || '');
+        } catch (error) {
+            Alert.alert('Error', 'Failed to load user data.');
+        }
+        finally {
             setLoading(false);
+        }
         };
         fetchData();
     }, []);
 
-    const handleSave = () => {
-        updateLoggedInUserProfile({
-            firstname,
-            lastname,
-            email,
-            password
-        }, setLoading);
+    const handleSave = async () => {
+        try {
+            await updateLoggedInUserProfile({
+                firstname,
+                lastname,
+                email,
+                password
+            }, setLoading);
+            Alert.alert('Success', 'Profile updated successfully.');
+        } catch (error: Error | any) {
+            Alert.alert('Error', error.message);
+        }
     };
-
-    // Status bar is managed globally via Expo StatusBar in app/_layout.tsx
 
     return (
         loading ? (
@@ -48,7 +57,14 @@ export default function ProfileModal() {
             >
                 <View style={styles.topHeader}>
                     <Text style={styles.topHeaderTitle}>Edit Profile</Text>
-                    <TouchableOpacity style={styles.topHeaderAction} onPress={async () => await handleLogout(router)}>
+                    <TouchableOpacity style={styles.topHeaderAction} onPress={async () => {
+                            try {
+                                await handleLogout()
+                                router.replace('/login');
+                            } catch (error: Error | any) {
+                                Alert.alert('Logout failed', error.message);
+                            } 
+                        }}>
                         <Text style={styles.topHeaderActionText}>Logout</Text>
                     </TouchableOpacity>
                 </View>

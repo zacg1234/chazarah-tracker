@@ -3,8 +3,10 @@ import { createSession } from '@/utils/sessionutil';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Font from 'expo-font';
+import { router } from 'expo-router';
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Alert, AppState, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+
 
 const STORAGE_KEY = 'chazarah_stopwatch';
 
@@ -165,13 +167,16 @@ export default function Stopwatch() {
             }, selectedYear);
             // Refresh shared sessions context so other tabs update immediately
             await refreshSessions();
+            router.replace('/obligation');
+            Alert.alert('Success', `Session Submitted: ${formatTime(elapsed)} min.`);
+        } catch (error: Error | any) {
+            Alert.alert('Error', error.message);
+        }
+        finally {
             setNoteModalVisible(false);
             setIsRunning(false);
             setElapsed(0);
             setStartTimestamp(null);
-            Alert.alert('Success', `Session Submitted: ${formatTime(elapsed)} min.`);
-        } catch (e) {
-            Alert.alert('Error', 'There was an error submitting your session. Please try again.');
         }
     }
 

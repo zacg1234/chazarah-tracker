@@ -3,6 +3,7 @@ import { handleLogin } from '@/utils/authutil';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
+  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -65,7 +66,14 @@ export default function Login() {
           />
           <TouchableOpacity
             style={styles.button}
-            onPress={async () => await handleLogin(email.trim(), password, router, setLoading)}
+            onPress={async () => {
+              try {
+                await handleLogin(email.trim(), password, setLoading)
+                router.replace('/(tabs)/chazarah');
+              } catch (error: Error | any) {
+                Alert.alert('Login failed', error.message);
+              }
+            }}
             disabled={loading}
           >
             <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Log In'}</Text>

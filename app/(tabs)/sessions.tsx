@@ -85,19 +85,15 @@ export default function SessionsScreen() {
   useEffect(() => {
     const lastIndex = sessions && sessions.length > 0 ? sessions.length - 1 : 0;
     setSelectedIndex(lastIndex);
-    setTimeout(() => {
-      try {
-        if (flatListRef.current && sessions && sessions.length > 0) {
-          flatListRef.current.scrollToIndex({ index: lastIndex, animated: false });
-        }
-      } catch (err) {
-        flatListRef.current?.scrollToOffset({
-          offset: ITEM_HEIGHT * lastIndex,
-          animated: false,
-        });
-      }
-    }, 0);
+    requestAnimationFrame(() => scrollToLast(false));
   }, [sessions]);
+
+  // After wheel height is measured/changes, ensure we stay at the bottom
+  useEffect(() => {
+    if (sessions && sessions.length > 0 && wheelHeight > 0) {
+      requestAnimationFrame(() => scrollToLast(false));
+    }
+  }, [wheelHeight]);
 
   const wheelPadding = useMemo(() => {
     return wheelHeight > 0 ? Math.max((wheelHeight - ITEM_HEIGHT) / 2, 0) : height * 0.25;
@@ -121,6 +117,17 @@ export default function SessionsScreen() {
 
   const handleWheelLayout = (event: LayoutChangeEvent) => {
     setWheelHeight(event.nativeEvent.layout.height);
+  };
+
+  // Helper to reliably scroll to the last item
+  const scrollToLast = (animated = false) => {
+    if (!flatListRef.current || !sessions || sessions.length === 0) return;
+    const lastIndex = sessions.length - 1;
+    try {
+      flatListRef.current.scrollToIndex({ index: lastIndex, animated });
+    } catch (err) {
+      flatListRef.current.scrollToOffset({ offset: ITEM_HEIGHT * lastIndex, animated });
+    }
   };
 
   const handleEdit = () => {
@@ -238,11 +245,8 @@ export default function SessionsScreen() {
           })}
           // Only set initialScrollIndex when we actually have items
           initialScrollIndex={sessions.length > 0 ? selectedIndex : undefined}
-          onScrollToIndexFailed={(info) => {
-            flatListRef.current?.scrollToOffset({
-              offset: ITEM_HEIGHT * info.index,
-              animated: false,
-            });
+          onScrollToIndexFailed={() => {
+            setTimeout(() => scrollToLast(false), 50);
           }}
         />
 

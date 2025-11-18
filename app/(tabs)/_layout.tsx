@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import { Tabs, useRouter } from 'expo-router';
 import { createContext, useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, TouchableOpacity, View } from 'react-native';
 
 
 export const YearContext = createContext<Year | null>(null);
@@ -27,14 +27,19 @@ export default function TabsLayout() {
   // 🔹 Fetch years from Supabase
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
-      const fetchedYears = await fetchYears();
-      setYears(fetchedYears);
-      const defaultYear = getCurrentYear(fetchedYears);
-      setSelectedYear(defaultYear ?? fetchedYears[0] ?? null);
-      const userObj = await getLoggedInUser();
-      setUser(userObj);
-      setLoading(false);
+      try {
+          setLoading(true);
+          const fetchedYears = await fetchYears();
+          setYears(fetchedYears);
+          const defaultYear = getCurrentYear(fetchedYears);
+          setSelectedYear(defaultYear ?? fetchedYears[0] ?? null);
+          const userObj = await getLoggedInUser();
+          setUser(userObj);
+      } catch (error) {
+        Alert.alert('Error', 'Failed to load years or user data.');
+      } finally {
+        setLoading(false);
+      }
     };
     fetchData();
   }, []);

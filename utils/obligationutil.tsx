@@ -3,7 +3,6 @@ import type { Obligation } from '@/types/obligation';
 import type { QuarterTurnOut } from '@/types/QuarterTurnOut';
 import type { Session } from '@/types/session';
 import { Year } from '@/types/year';
-import { Alert } from 'react-native';
 import { getSumPaymentsBetweenDates } from './paymentutil';
 import { filterSessionsBetweenDates } from './sessionutil';
 import { getQuartersForYear } from './yearutils';
@@ -18,12 +17,7 @@ export async function getObligationByUserAndYear(UserId: string, YearId: number)
 		.maybeSingle();
 	if (error) throw error;
 	 if (!data) {
-        Alert.alert('No Obligation Found', 'No Obligation was found for you for the selected year.');
-        return {
-            UserId,
-            YearId,
-            ObligationPerWeek: 0,
-        } as Obligation;
+        return null as unknown as Obligation;
     }
     return data as Obligation;
 }
@@ -104,7 +98,11 @@ export async function getUserQuarterTurnOut(
 export async function getUserQuarters(UserId: string, Year: Year, sessions: Session[]): Promise<QuarterTurnOut[]> { 
     // Get the user's weekly obligation
     const obligation = await getObligationByUserAndYear(UserId, Year.JewishYear);
-    
+
+    if (!obligation) {
+        return [];
+    }
+
     // Get the quarters from yearutils
     const quarters = getQuartersForYear(Year);
 

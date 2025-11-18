@@ -2,6 +2,7 @@ import { handleSignUp } from '@/utils/authutil';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
+    Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -68,7 +69,17 @@ export default function SignUp() {
                         value={password}
                     />
 
-                    <TouchableOpacity style={styles.button} onPress={() => handleSignUp(email, password, firstname, lastname, router, setLoading)} disabled={loading}>
+                    <TouchableOpacity style={styles.button} onPress={async () => {
+                        try {
+                            setLoading(true);
+                            await handleSignUp(email, password, firstname, lastname);
+                            router.replace('/login');
+                        } catch (error: Error | any) {
+                            Alert.alert('Sign Up failed', error.message);
+                        } finally {
+                            setLoading(false);
+                        }
+                    }} disabled={loading}>
                         <Text style={styles.buttonText}>{loading ? 'Signing up...' : 'Sign Up'}</Text>
                     </TouchableOpacity>
 

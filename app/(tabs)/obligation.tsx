@@ -2,7 +2,7 @@ import { formatDateMDY } from '@/utils/dateutil';
 import { getUserQuarters } from '@/utils/obligationutil';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useContext, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SessionsContext, UserContext, YearContext } from './_layout';
 
 export default function ObligationScreen() {
@@ -21,6 +21,9 @@ export default function ObligationScreen() {
           try {
             const quarterTurnOuts = await getUserQuarters(user.id, year, sessions);
             if (IsActive) setQuarters(quarterTurnOuts);
+            if (quarterTurnOuts.length === 0) {
+                Alert.alert('No Obligation Found', 'No Obligation was found for you for the selected year.');
+            }
           } catch (e) {
             if (IsActive) setQuarters([]);
           }

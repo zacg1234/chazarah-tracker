@@ -1,6 +1,7 @@
 import { UserContext, YearContext } from '@/app/(tabs)/_layout';
 import { createSession, updateSession } from '@/utils/sessionutil';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { router } from 'expo-router';
 import React, { useContext, useEffect, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
@@ -106,18 +107,19 @@ const handleTimeChange = (_event: any, selected?: Date) => {
       Alert.alert('Error', 'Please enter a valid session length in minutes.');
       return;
     }
-    // Format date as local time string for DB
-    const pad = (n: number) => n.toString().padStart(2, '0');
+   
+    const pad = (n: number) => n.toString().padStart(2, '0');  // Format date as local time string for DB
     const sessionStartTime = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-
-    if (mode === 'edit' && initialSession?.SessionId) {
-      await updateSession(initialSession.SessionId, {
-        SessionStartTime: sessionStartTime,
-        SessionLength: Number(sessionLength) * 60000,
-        SessionNote: note,
-      }, selectedYear);
-    } else {
-      try {
+    
+    try {
+      if (mode === 'edit' && initialSession?.SessionId) {
+        await updateSession(initialSession.SessionId, {
+          SessionStartTime: sessionStartTime,
+          SessionLength: Number(sessionLength) * 60000,
+          SessionNote: note,
+        }, selectedYear);
+      } 
+      else {
         await createSession({
           UserId: user.id,
           YearId: selectedYear.JewishYear,
@@ -126,14 +128,18 @@ const handleTimeChange = (_event: any, selected?: Date) => {
           SessionStartTime: sessionStartTime,
         }, selectedYear);
         Alert.alert('Success', `Session Submitted: ${sessionLength} min.`);
-      } catch (error) {
-        Alert.alert('Error', 'Failed to submit session.');
       }
+
+      router.replace('/obligation');
+
+    } catch (error: Error | any) {
+        Alert.alert('Error', error.message);
+    } finally {
+        onClose();
+        setSessionLength('');
+        setNote('');
+        if (onSubmit) onSubmit();
     }
-    onClose();
-    setSessionLength('');
-    setNote('');
-    if (onSubmit) onSubmit();
   };
 
   return (

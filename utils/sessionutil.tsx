@@ -1,7 +1,6 @@
 import { supabase } from '@/services/supabaseClient';
 import type { Session } from '@/types/session';
 import type { Year } from '@/types/year';
-import { router } from 'expo-router';
 
 // CREATE
 export async function createSession(session: Omit<Session, 'SessionId'>, year: Year) {
@@ -12,7 +11,6 @@ export async function createSession(session: Omit<Session, 'SessionId'>, year: Y
       .select()
       .single();
     if (error) throw error;
-    router.replace('/obligation');
     return data as Session;
   }
 }
@@ -30,7 +28,6 @@ export async function getSessionById(SessionId: number) {
 
 // READ (all for user and year)
 export async function getSessionsByUserAndYear(UserId: string, YearId: number) {
-  console.log("fetching sessions");
   const { data, error } = await supabase
     .from('TblSession')
     .select('*')
@@ -107,14 +104,11 @@ export async function deleteSession(SessionId: number) {
 }
 
 
-// year: { StartDate: string, EndDate: string, JewishYear: number, ... }
-import { Alert } from 'react-native';
 
 export const validateSessionData = (session: Partial<Session>, year: Year) => {
   let errorMsg = '';
   if (!session.SessionStartTime) errorMsg = 'Session start time is required.';
   else if (!year || !year.StartDate || !year.EndDate) errorMsg = 'Year is missing start/end date.';
-  //else if (session.YearId != year.JewishYear) errorMsg = 'Session year does not match provided year.';
   else {
     const start = new Date(session.SessionStartTime);
     if (isNaN(start.getTime())) errorMsg = 'Session start time is invalid.';
@@ -132,8 +126,7 @@ export const validateSessionData = (session: Partial<Session>, year: Year) => {
     }
   }
   if (errorMsg) {
-    Alert.alert('Invalid Session', errorMsg);
-    return false;
+    throw new Error(errorMsg);
   }
   return true;
 }

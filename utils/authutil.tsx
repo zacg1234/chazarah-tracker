@@ -1,33 +1,45 @@
-import type { Router } from 'expo-router';
-import { Alert } from 'react-native';
 import { supabase } from '../services/supabaseClient';
 
   // 🔹 Logout handler
-export async function handleLogout(router: Router) {
-    await supabase.auth.signOut();
-    router.replace('/login');
+export async function handleLogout() {
+    try {
+        await supabase.auth.signOut();
+    } catch (error: Error | any) {
+        throw new Error(error.message);
+    }
 }
 
-export async function handleLogin(email: string, password: string, router: Router, setLoading?: (loading: boolean) => void) {
+export async function handleLogin(email: string, password: string, setLoading?: (loading: boolean) => void) {
     setLoading?.(true);
 
     try {
         const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
 
         if (error) {
-            Alert.alert('Login Failed', error.message);
-        } else {
-            // Navigate into the tabs navigator explicitly
-            router.replace('/(tabs)/chazarah');
+            throw new Error(error.message);
         }
+
+    } catch (error: Error | any) {
+        throw new Error(error.message);
     } finally {
         setLoading?.(false);
     }
 }
 
 
-export async function handleSignUp(email: string, password: string, firstname: string, lastname: string, router: Router, setLoading?: (loading: boolean) => void) {
-    setLoading?.(true);
+export async function handleSignUp(email: string, password: string, firstname: string, lastname: string) {
+    
+    if (firstname.length === 0 || lastname.length === 0) {
+        throw new Error('First and Last name are required.');
+    }
+ 
+    if (email.length === 0 || !email.includes('@')) {
+        throw new Error('Please enter a valid email address.');
+    }
+
+    if (password.length < 6) {
+        throw new Error('Password must be at least 6 characters long.');
+    }
 
     try {
         const { data, error } = await supabase.auth.signUp({
@@ -44,17 +56,10 @@ export async function handleSignUp(email: string, password: string, firstname: s
             });
 
             if (error) {
-                Alert.alert('Error', error.message);
-                return;
+                throw new Error(error.message);
             }
-
-        Alert.alert('Success', 'Account created successfully!');
-        router.replace('/login');
-    } catch (err) {
-        console.error('Unexpected signup error:', err);
-        Alert.alert('Error', 'Something went wrong. Please try again.');
-    } finally {
-        setLoading?.(false);
+    } catch (Error: Error | any) {
+        throw new Error(Error.message);
     }
 };
 
@@ -80,8 +85,7 @@ export async function updateLoggedInUserProfile(
         // Ensure there is a logged-in user
         const { data: userResp, error: userErr } = await supabase.auth.getUser();
         if (userErr || !userResp.user) {
-            Alert.alert('Error', 'No logged in user.');
-            return { success: false };
+            throw new Error('No logged in user.')
         }
 
         const attributes: {
@@ -106,24 +110,14 @@ export async function updateLoggedInUserProfile(
         if (params.email && params.email.trim()) attributes.email = params.email.trim();
         if (params.password && params.password.length > 0) attributes.password = params.password;
 
-        if (Object.keys(attributes).length === 0) {
-            Alert.alert('No changes', 'Nothing to update.');
-            return { success: true };
-        }
-
         const { data: updated, error } = await supabase.auth.updateUser(attributes);
         if (error) {
-            Alert.alert('Update Failed', error.message);
-            return { success: false, error } as const;
+            throw new Error(error.message)
         }
-
-        Alert.alert('Success', 'Profile updated successfully.');
         
         return { success: true, user: updated?.user } as const;
-    } catch (err: any) {
-        console.error('Unexpected update error:', err);
-        Alert.alert('Error', 'Something went wrong. Please try again.');
-        return { success: false, error: err } as const;
+    } catch (error: Error | any) {
+        throw new Error(error.message);
     } finally {
         setLoading?.(false);
     }
