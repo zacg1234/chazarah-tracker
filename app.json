@@ -2,7 +2,7 @@
   "expo": {
     "name": "Chazarah Tracker",
     "slug": "Chazarah Tracker",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/Chazarah_Tracker_Logo_Simple.png",
     "scheme": "chazarahtracker",
@@ -10,7 +10,10 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.zacg1234.chazarahtracker"
+      "bundleIdentifier": "com.zacg1234.chazarahtracker",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -18,7 +21,13 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.zacg1234.chazarahtracker"
+      "package": "com.zacg1234.chazarahtracker",
+      "statusBar": {
+        "backgroundColor": "#ffffff",
+        "barStyle": "dark-content",
+        "translucent": false,
+        "hidden": false
+      }
     },
     "web": {
       "output": "static",
@@ -43,6 +52,12 @@
       "eas": {
         "projectId": "70d8dbbd-2779-473f-86d5-f8a8ed1bed33"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/70d8dbbd-2779-473f-86d5-f8a8ed1bed33"
     }
   }
 }

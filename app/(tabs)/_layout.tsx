@@ -6,12 +6,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import { Tabs, useRouter } from 'expo-router';
 import { createContext, useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, TouchableOpacity, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, Platform, Text, TouchableOpacity, View } from 'react-native';
 
 
 export const YearContext = createContext<Year | null>(null);
 export const UserContext = createContext<any>(null);
-export const SessionsContext = createContext<{ sessions: any[]; loading: boolean; refreshSessions: () => Promise<void>; }>({ sessions: [], loading: false, refreshSessions: async () => {} });
+export const SessionsContext = createContext<{ sessions: any[]; loading: boolean; refreshSessions: () => Promise<void>; }>({ sessions: [], loading: false, refreshSessions: async () => { } });
 
 
 export default function TabsLayout() {
@@ -28,13 +28,13 @@ export default function TabsLayout() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-          setLoading(true);
-          const fetchedYears = await fetchYears();
-          setYears(fetchedYears);
-          const defaultYear = getCurrentYear(fetchedYears);
-          setSelectedYear(defaultYear ?? fetchedYears[0] ?? null);
-          const userObj = await getLoggedInUser();
-          setUser(userObj);
+        setLoading(true);
+        const fetchedYears = await fetchYears();
+        setYears(fetchedYears);
+        const defaultYear = getCurrentYear(fetchedYears);
+        setSelectedYear(defaultYear ?? fetchedYears[0] ?? null);
+        const userObj = await getLoggedInUser();
+        setUser(userObj);
       } catch (error) {
         Alert.alert('Error', 'Failed to load years or user data.');
       } finally {
@@ -69,87 +69,123 @@ export default function TabsLayout() {
     <UserContext.Provider value={user}>
       <YearContext.Provider value={selectedYear}>
         <SessionsContext.Provider value={sessionsCtxValue}>
-        <View style={{ flex: 1 }}>
-          <Tabs
-            screenOptions={({ route }) => ({
-              headerStyle: { backgroundColor: '#fff' },
-              headerTitleAlign: 'left',
+          <View style={{ flex: 1 }}>
+            <Tabs
+              screenOptions={({ route }) => ({
+                headerStyle: { backgroundColor: '#fff' },
+                headerTitleAlign: 'left',
 
-              // 🔹 Add picker in header
-              headerTitle: () =>
-                loading ? (
-                  <ActivityIndicator size="small" />
-                ) : (
-                  <View
+                // 🔹 Add picker in header
+                headerTitle: () =>
+                  loading ? (
+                    <ActivityIndicator size="small" />
+                  ) : Platform.OS === 'ios' ? (
+                    // iOS: compact button → native ActionSheet
+                    <TouchableOpacity
+                      onPress={() =>
+                        ActionSheetIOS.showActionSheetWithOptions(
+                          {
+                            options: [...years.map((y) => `${y.JewishYear}`), 'Cancel'],
+                            cancelButtonIndex: years.length,
+                            title: 'Select Year',
+                          },
+                          (buttonIndex) => {
+                            if (buttonIndex < years.length) {
+                              setSelectedYear(years[buttonIndex]);
+                            }
+                          }
+                        )
+                      }
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        backgroundColor: '#fff',
+                        borderRadius: 10,
+                        borderWidth: 1,
+                        borderColor: '#2c3e50',
+                        paddingVertical: 6,
+                        paddingHorizontal: 12,
+                        gap: 6,
+                      }}
+                    >
+                      <Text style={{ color: '#2c3e50', fontWeight: '600', fontSize: 16 }}>
+                        {selectedYear?.JewishYear ?? '—'}
+                      </Text>
+                      <Ionicons name="chevron-down" size={14} color="#2c3e50" />
+                    </TouchableOpacity>
+                  ) : (
+                    // Android: native dropdown Picker
+                    <View
+                      style={{
+                        backgroundColor: '#ffffffff',
+                        borderRadius: 12,
+                        borderWidth: 1,
+                        borderColor: '#2c3e50',
+                        paddingHorizontal: 5,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Picker
+                        style={{
+                          width: 120,
+                          color: '#2c3e50',
+                          paddingHorizontal: 0,
+                          marginHorizontal: 0,
+                        }}
+                        selectedValue={selectedYear?.JewishYear ?? undefined}
+                        onValueChange={(jewishYear: number) => {
+                          const found = years.find((y) => y.JewishYear === jewishYear);
+                          if (found) setSelectedYear(found);
+                        }}
+                        dropdownIconColor="#2c3e50"
+                        mode="dropdown"
+                      >
+                        {years.map((yearObj) => (
+                          <Picker.Item
+                            key={yearObj.JewishYear}
+                            label={`${yearObj.JewishYear}`}
+                            value={yearObj.JewishYear}
+                          />
+                        ))}
+                      </Picker>
+                    </View>
+                  ),
+
+                // 🔹 Profile icon button
+                headerRight: () => (
+                  <TouchableOpacity
+                    onPress={() => router.push('/modal/profile')}
                     style={{
-                      backgroundColor: '#FFFF', // match tab bg
-                      borderRadius: 12,
-                      borderWidth: 1,
-                      borderColor: '#2c3e50',
-                      paddingHorizontal: 5,
-                      alignItems: 'center',
-                      justifyContent: 'center',
+                      marginRight: 10,
+                      paddingVertical: 6,
+                      paddingHorizontal: 12,
+                      borderRadius: 6,
                     }}
                   >
-                    <Picker
-                      style={{
-                        width: 120,
-                        color: '#2c3e50',
-                        paddingHorizontal: 0,
-                        marginHorizontal: 0
-                      }}
-                      selectedValue={selectedYear ?? undefined}
-                      onValueChange={(yearObj: Year) => {
-                        setSelectedYear(yearObj);
-                      }}
-                      dropdownIconColor="#2c3e50"
-                      mode="dropdown"
-                    >
-                      {years.map((yearObj) => (
-                        <Picker.Item
-                          key={yearObj.JewishYear}
-                          label={`${yearObj.JewishYear}`}
-                          value={yearObj}
-                        />
-                      ))}
-                    </Picker>
-                  </View>
+                    <Ionicons name="person-circle-outline" size={28} color="#2c3e50" />
+                  </TouchableOpacity>
                 ),
 
-              // 🔹 Profile icon button
-              headerRight: () => (
-                <TouchableOpacity
-                  onPress={() => router.push('/modal/profile')}
-                  style={{
-                    marginRight: 10,
-                    paddingVertical: 6,
-                    paddingHorizontal: 12,
-                    borderRadius: 6,
-                  }}
-                >
-                  <Ionicons name="person-circle-outline" size={28} color="#2c3e50" />
-                </TouchableOpacity>
-              ),
+                // 🔹 Default tab icons restored
+                tabBarIcon: ({ color, size }) => {
+                  var iconName: keyof typeof Ionicons.glyphMap;
 
-              // 🔹 Default tab icons restored
-              tabBarIcon: ({ color, size }) => {
-                var iconName: keyof typeof Ionicons.glyphMap;
+                  if (route.name === 'chazarah') iconName = 'time-outline';
+                  else if (route.name === 'sessions') iconName = 'list-outline';
+                  else iconName = 'trophy-outline';
 
-                if (route.name === 'chazarah') iconName = 'time-outline';
-                else if (route.name === 'sessions') iconName = 'list-outline';
-                else iconName = 'trophy-outline';
-
-                return <Ionicons name={iconName} size={size} color={color} />;
-              },
-              tabBarActiveTintColor: '#2c3e50',
-              tabBarInactiveTintColor: '#95a5a6',
-            })}
-          >
-            <Tabs.Screen name="chazarah" options={{ title: 'Chazarah' }} />
-            <Tabs.Screen name="sessions" options={{ title: 'Sessions' }} />
-            <Tabs.Screen name="obligation" options={{ title: 'Obligation' }} />
-          </Tabs>
-        </View>
+                  return <Ionicons name={iconName} size={size} color={color} />;
+                },
+                tabBarActiveTintColor: '#2c3e50',
+                tabBarInactiveTintColor: '#95a5a6',
+              })}
+            >
+              <Tabs.Screen name="chazarah" options={{ title: 'Chazarah' }} />
+              <Tabs.Screen name="sessions" options={{ title: 'Sessions' }} />
+              <Tabs.Screen name="obligation" options={{ title: 'Obligation' }} />
+            </Tabs>
+          </View>
         </SessionsContext.Provider>
       </YearContext.Provider>
     </UserContext.Provider>
