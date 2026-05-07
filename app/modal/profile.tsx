@@ -1,4 +1,4 @@
-import { getLoggedInUser, handleLogout, updateLoggedInUserProfile } from '@/utils/authutil';
+import { deleteAccount, getLoggedInUser, handleLogout, updateLoggedInUserProfile } from '@/utils/authutil';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -14,19 +14,19 @@ export default function ProfileModal() {
 
     useEffect(() => {
         const fetchData = async () => {
-        try {
-            setLoading(true);
-            const userObj = await getLoggedInUser();
-            setUser(userObj);
-            setFirstname(userObj?.user_metadata?.firstname || '');
-            setLastname(userObj?.user_metadata?.lastname || '');
-            setEmail(userObj?.user_metadata?.email || userObj?.email || '');
-        } catch (error) {
-            Alert.alert('Error', 'Failed to load user data.');
-        }
-        finally {
-            setLoading(false);
-        }
+            try {
+                setLoading(true);
+                const userObj = await getLoggedInUser();
+                setUser(userObj);
+                setFirstname(userObj?.user_metadata?.firstname || '');
+                setLastname(userObj?.user_metadata?.lastname || '');
+                setEmail(userObj?.user_metadata?.email || userObj?.email || '');
+            } catch (error) {
+                Alert.alert('Error', 'Failed to load user data.');
+            }
+            finally {
+                setLoading(false);
+            }
         };
         fetchData();
     }, []);
@@ -58,13 +58,13 @@ export default function ProfileModal() {
                 <View style={styles.topHeader}>
                     <Text style={styles.topHeaderTitle}>Edit Profile</Text>
                     <TouchableOpacity style={styles.topHeaderAction} onPress={async () => {
-                            try {
-                                await handleLogout()
-                                router.replace('/login');
-                            } catch (error: Error | any) {
-                                Alert.alert('Logout failed', error.message);
-                            } 
-                        }}>
+                        try {
+                            await handleLogout()
+                            router.replace('/login');
+                        } catch (error: Error | any) {
+                            Alert.alert('Logout failed', error.message);
+                        }
+                    }}>
                         <Text style={styles.topHeaderActionText}>Logout</Text>
                     </TouchableOpacity>
                 </View>
@@ -131,6 +131,33 @@ export default function ProfileModal() {
                                     <Text style={styles.saveButtonText}>Save Changes</Text>
                                 </TouchableOpacity>
                             </View>
+
+                            <TouchableOpacity
+                                style={styles.deleteAccountButton}
+                                onPress={() =>
+                                    Alert.alert(
+                                        'Delete Account',
+                                        'Are you sure you want to delete your entire profile? This action cannot be undone.',
+                                        [
+                                            {
+                                                text: 'Delete',
+                                                style: 'destructive',
+                                                onPress: async () => {
+                                                    try {
+                                                        await deleteAccount();
+                                                        router.replace('/login');
+                                                    } catch (error: Error | any) {
+                                                        Alert.alert('Error', error.message);
+                                                    }
+                                                },
+                                            },
+                                            { text: 'Cancel', style: 'cancel' }
+                                        ]
+                                    )
+                                }
+                            >
+                                <Text style={styles.deleteAccountButtonText}>Delete Account</Text>
+                            </TouchableOpacity>
                         </View>
                     </View>
                 </ScrollView>
@@ -191,7 +218,7 @@ const styles = StyleSheet.create({
         marginBottom: 6,
         fontWeight: '600',
     },
-    
+
     buttonRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -248,7 +275,24 @@ const styles = StyleSheet.create({
         fontSize: 17,
         color: '#222',
     },
-    // Add to StyleSheet:
+    deleteAccountButton: {
+        marginTop: 50,
+        width: '100%',
+        paddingVertical: 5,
+        paddingHorizontal: 13,
+        borderRadius: 10,
+        backgroundColor: '#fef2f2',
+        borderWidth: 1,
+        borderColor: '#fecaca',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    deleteAccountButtonText: {
+        color: '#eb0000ff',
+        fontWeight: '500',
+        fontSize: 15,
+        letterSpacing: 0.2,
+    },
     inputDisabled: {
         backgroundColor: '#cfd1d2ff',
         color: '#555',

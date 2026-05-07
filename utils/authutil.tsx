@@ -63,6 +63,24 @@ export async function handleSignUp(email: string, password: string, firstname: s
     }
 };
 
+export async function deleteAccount() {
+    const { data: userResp, error: userErr } = await supabase.auth.getUser();
+    if (userErr || !userResp.user) throw new Error('No logged in user.');
+    const userId = userResp.user.id;
+
+    // Delete all user-scoped table records
+    for (const table of ['TblSession', 'TblObligation', 'TblPayment']) {
+        const { error } = await supabase.from(table).delete().eq('UserId', userId);
+        if (error) throw new Error(error.message);
+    }
+
+    // Delete the auth user via a SECURITY DEFINER RPC (see CLAUDE.md for required SQL)
+    const { error: rpcError } = await supabase.rpc('delete_user');
+    if (rpcError) throw new Error(rpcError.message);
+
+    await supabase.auth.signOut();
+}
+
 export async function getLoggedInUser() {
   const currentUser = await supabase.auth.getUser();
   return currentUser.data.user;
