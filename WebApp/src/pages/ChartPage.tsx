@@ -104,7 +104,7 @@ export default function ChartPage() {
             </ResponsiveContainer>
           </div>
           <div className="chart-actions" data-no-export="1">
-            <button className="btn primary" onClick={download}>Download PNG</button>
+            <button className="btn primary" onClick={download}>Download</button>
           </div>
           </>
         )}
