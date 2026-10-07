@@ -1,5 +1,6 @@
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAppData } from '@/providers';
+import ProfileBar from './ProfileBar';
 import { Icon, MOBILE_NAV } from './nav';
 
 const TITLES: Record<string, string> = {
@@ -14,6 +15,7 @@ export default function MobileLayout() {
     <div className="app mobile">
       <header className="m-header">
         <h1>{TITLES[pathname] ?? 'Chazarah Tracker'}</h1>
+        <Link to="/chart" className="m-chart" aria-label="Progress chart"><Icon d="M4 20V10M10 20V4M16 20v-8M22 20H2" /></Link>
         {!yearsLoading && (
           <select
             className="m-year"
@@ -28,6 +30,7 @@ export default function MobileLayout() {
           </select>
         )}
       </header>
+      <ProfileBar />
 
       <main className="m-page"><Outlet /></main>
 

@@ -189,3 +189,16 @@ input, textarea, select, button { font: inherit; color: inherit; }
 
 .chart-legend span { white-space: nowrap; }
 @media (max-width: 900px) { .chart-legend { flex-wrap: wrap; } }
+.check { display: flex; align-items: center; gap: 10px; margin: 0 0 16px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.check input { width: 18px; height: 18px; margin: 0; }
+.m-chart { margin-left: auto; margin-right: 12px; color: var(--muted); display: flex; }
+.stat-value small { font-size: .5em; font-weight: 600; color: var(--muted); }
+
+/* family profile switcher */
+.profile-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; border: 0; border-bottom: 1px solid var(--line); background: #fff; padding: 8px 20px; cursor: pointer; font-weight: 600; color: var(--muted); }
+.profile-bar.other { background: #fffbeb; border-bottom-color: #fde68a; color: #92400e; }
+.pb-switch { color: var(--primary); font-size: 13px; } .profile-bar.other .pb-switch { color: #92400e; }
+.pb-list { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.pb-item { text-align: left; padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; cursor: pointer; }
+.pb-item.active { background: var(--primary-soft); border-color: var(--primary); }
+.family-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }

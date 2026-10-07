@@ -20,13 +20,13 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, recovery } = useAuth();
 
   useEffect(() => {
-    if (!authLoading && user) {
+    if (!authLoading && user && !recovery) {
       router.replace('/(tabs)/chazarah');
     }
-  }, [authLoading, user]);
+  }, [authLoading, user, recovery]);
 
   if (authLoading || user) {
     return null; // let redirect happen or wait for auth resolution
@@ -55,15 +55,25 @@ export default function Login() {
             onChangeText={setEmail}
             value={email}
             keyboardType="email-address"
-            placeholderTextColor="#777"
+            autoCorrect={false}
+            placeholderTextColor="#94a3b8"
           />
           <TextInput
             style={styles.input}
             placeholder="Password"
             onChangeText={setPassword}
             value={password}
-            placeholderTextColor="#777"
+            secureTextEntry
+            autoCapitalize="none"
+            autoComplete="current-password"
+            placeholderTextColor="#94a3b8"
           />
+          <TouchableOpacity
+            style={styles.forgotWrap}
+            onPress={() => router.push({ pathname: '/forgot-password' as any, params: { email: email.trim() } })}
+          >
+            <Text style={styles.forgotText}>Forgot password?</Text>
+          </TouchableOpacity>
           <TouchableOpacity
             style={styles.button}
             onPress={async () => {
@@ -71,7 +81,7 @@ export default function Login() {
                 await handleLogin(email.trim(), password, setLoading)
                 router.replace('/(tabs)/chazarah');
               } catch (error: Error | any) {
-                Alert.alert('Login failed', error.message);
+                Alert.alert('Login failed', error?.message ?? 'Something went wrong.');
               }
             }}
             disabled={loading}
@@ -91,8 +101,10 @@ const styles = StyleSheet.create({
   container: { width: '90%', alignItems: 'center' },
   logo: { width: 320, height: 60, marginBottom: 15 },
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 25, marginTop: 20, color: '#b39d0e' },
-  input: { width: '100%', borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, marginVertical: 8 },
-  button: { backgroundColor: '#007AFF', padding: 15, borderRadius: 8, width: '100%', alignItems: 'center', marginTop: 10 },
+  input: { width: '100%', borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 10, padding: 13, marginVertical: 6, backgroundColor: '#fff', color: '#0f172a', fontSize: 16 },
+  button: { backgroundColor: '#2563eb', padding: 15, borderRadius: 10, width: '100%', alignItems: 'center', marginTop: 10 },
   buttonText: { color: 'white', fontWeight: 'bold' },
-  link: { color: '#007AFF', marginTop: 20 },
+  forgotWrap: { alignSelf: 'flex-end', marginTop: 2 },
+  forgotText: { color: '#2563eb', fontSize: 14 },
+  link: { color: '#2563eb', marginTop: 20 },
 });

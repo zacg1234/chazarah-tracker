@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthShell from '@/components/AuthShell';
-import { handleSignUp } from '@/utils/authutil';
+import { EmailAlreadyUsedError, handleSignUp } from '@/utils/authutil';
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -11,16 +11,19 @@ export default function Signup() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [emailTaken, setEmailTaken] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setEmailTaken(false);
     setLoading(true);
     try {
       await handleSignUp(email, password, firstname, lastname);
       navigate('/login');
     } catch (err: any) {
-      setError(err.message);
+      if (err instanceof EmailAlreadyUsedError) setEmailTaken(true);
+      else setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -45,9 +48,18 @@ export default function Signup() {
           <input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
         </label>
         <label className="field">Password
-          <input type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <input type="text" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
           <span className="hint">At least 6 characters.</span>
         </label>
+        {emailTaken && (
+          <div className="msg error">
+            That email is already being used for a different account.
+            <div className="row end" style={{ marginTop: 8 }}>
+              <button type="button" className="btn ghost sm" onClick={() => setEmailTaken(false)}>Close</button>
+              <button type="button" className="btn outline sm" onClick={() => navigate('/forgot-password', { state: { email } })}>Reset password</button>
+            </div>
+          </div>
+        )}
         {error && <p className="msg error">{error}</p>}
         <button className="btn primary block" disabled={loading}>{loading ? 'Creating account…' : 'Create account'}</button>
       </form>

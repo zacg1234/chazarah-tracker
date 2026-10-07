@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import AuthShell from '@/components/AuthShell';
 import { useAuth } from '@/providers';
 import { handleLogin } from '@/utils/authutil';
+import { tryOpenMobileApp } from '@/utils/openapp';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ export default function Login() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    // Already signed in (saved session): just continue. We only hand off to the app on an actual login below.
     if (!authLoading && user && !recovery) navigate('/chazarah', { replace: true });
   }, [authLoading, user, recovery, navigate]);
 
@@ -23,6 +25,7 @@ export default function Login() {
     setError('');
     try {
       await handleLogin(email.trim(), password, setLoading);
+      tryOpenMobileApp();
       navigate('/chazarah');
     } catch (err: any) {
       setError(err.message);

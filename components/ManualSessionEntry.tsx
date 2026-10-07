@@ -1,4 +1,5 @@
 import { UserContext, YearContext } from '@/app/(tabs)/_layout';
+import { toLocalTimestamp } from '@/utils/dateutil';
 import { createSession, updateSession } from '@/utils/sessionutil';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router } from 'expo-router';
@@ -97,19 +98,17 @@ const handleTimeChange = (_event: any, selected?: Date) => {
   }
 };
 
-  const { getCurrentLocalTimeString } = require('@/utils/dateutil');
   const handleSubmit = async () => {
     if (!user?.id || !selectedYear?.JewishYear) {
       Alert.alert('Error', 'User or year not selected.');
       return;
     }
-    if (!sessionLength || isNaN(Number(sessionLength))) {
+    if (!sessionLength || isNaN(Number(sessionLength)) || Number(sessionLength) <= 0) {
       Alert.alert('Error', 'Please enter a valid session length in minutes.');
       return;
     }
    
-    const pad = (n: number) => n.toString().padStart(2, '0');  // Format date as local time string for DB
-    const sessionStartTime = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+    const sessionStartTime = toLocalTimestamp(date);
     
     try {
       if (mode === 'edit' && initialSession?.SessionId) {
@@ -130,15 +129,14 @@ const handleTimeChange = (_event: any, selected?: Date) => {
         Alert.alert('Success', `Session Submitted: ${sessionLength} min.`);
       }
 
+      onClose();
+      setSessionLength('');
+      setNote('');
+      if (onSubmit) onSubmit();
       router.replace('/obligation');
-
     } catch (error: Error | any) {
-        Alert.alert('Error', error.message);
-    } finally {
-        onClose();
-        setSessionLength('');
-        setNote('');
-        if (onSubmit) onSubmit();
+        // Keep the modal open so the user's input isn't lost
+        Alert.alert('Error', error?.message ?? 'Failed to save session.');
     }
   };
 
@@ -190,7 +188,7 @@ const handleTimeChange = (_event: any, selected?: Date) => {
               keyboardType="numeric"
               value={sessionLength}
               onChangeText={setSessionLength}
-              placeholderTextColor={"#818181ff"}
+              placeholderTextColor={"#94a3b8"}
               returnKeyType="next"
             />
             <TextInput
@@ -199,7 +197,7 @@ const handleTimeChange = (_event: any, selected?: Date) => {
               value={note}
               onChangeText={setNote}
               multiline
-              placeholderTextColor={"#818181ff"}
+              placeholderTextColor={"#94a3b8"}
             />
             <View style={styles.buttonRow}>
               <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onClose}>
@@ -249,24 +247,24 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#cbd5e1',
     borderRadius: 8,
     padding: 10,
     marginBottom: 14,
     fontSize: 16,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#f4f6fa',
   },
   inputButton: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#cbd5e1',
     borderRadius: 8,
     padding: 10,
     marginBottom: 14,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#f4f6fa',
   },
   inputButtonText: {
     fontSize: 16,
-    color: '#343a40',
+    color: '#0f172a',
   },
   buttonRow: {
     flexDirection: 'row',
@@ -286,11 +284,11 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   cancelButton: {
-    backgroundColor: '#e34d4dff',
+    backgroundColor: '#c62828',
     marginRight: 4,
   },
   submitButton: {
-    backgroundColor: '#007bff',
+    backgroundColor: '#2563eb',
     marginLeft: 4,
   },
   buttonText: {

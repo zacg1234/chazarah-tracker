@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useAppData, useAuth } from '@/providers';
+import { useAppData } from '@/providers';
 import { getUserQuarters } from '@/utils/obligationutil';
 
 // Quarter breakdown for the logged-in user and selected year
 export function useQuarters() {
-  const { user } = useAuth();
-  const { selectedYear, sessions } = useAppData();
+  const { selectedYear, sessions, activeProfile } = useAppData();
   const [quarters, setQuarters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -14,7 +13,7 @@ export function useQuarters() {
     (async () => {
       setLoading(true);
       try {
-        const q = user?.id && selectedYear ? await getUserQuarters(user.id, selectedYear, sessions) : [];
+        const q = activeProfile?.id && selectedYear ? await getUserQuarters(activeProfile.id, selectedYear, sessions) : [];
         if (active) setQuarters(q);
       } catch {
         if (active) setQuarters([]);
@@ -22,7 +21,7 @@ export function useQuarters() {
       if (active) setLoading(false);
     })();
     return () => { active = false; };
-  }, [user, selectedYear, sessions]);
+  }, [activeProfile?.id, selectedYear, sessions]);
 
   const current = quarters.slice().reverse().find((q) => q.IsActive);
   const owedNow = current ? Math.ceil(current.MinutesOwed - current.MinutesChazered) : 0;

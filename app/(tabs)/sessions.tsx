@@ -218,7 +218,7 @@ export default function SessionsScreen() {
         <Animated.FlatList
           ref={flatListRef}
           data={sessions}
-          keyExtractor={(item) => item.SessionId?.toString() ?? item.id?.toString()}
+          keyExtractor={(item, index) => (item.SessionId ?? item.id ?? index).toString()}
           renderItem={({ item, index }) => (
             <WheelItem
               item={{
@@ -253,7 +253,7 @@ export default function SessionsScreen() {
         {/* Fade gradients top/bottom */}
         <View pointerEvents="none" style={[styles.fadeOverlay, styles.fadeTop]}>
           <LinearGradient
-            colors={['#f8f9fa', '#e9ecef']}
+            colors={['#f4f6fa', '#e2e8f0']}
             style={StyleSheet.absoluteFill}
             start={{ x: 0, y: 0 }}
             end={{ x: 0, y: 1 }}
@@ -261,7 +261,7 @@ export default function SessionsScreen() {
         </View>
         <View pointerEvents="none" style={[styles.fadeOverlay, styles.fadeBottom]}>
           <LinearGradient
-            colors={['#e9ecef', '#f8f9fa']}
+            colors={['#e2e8f0', '#f4f6fa']}
             style={StyleSheet.absoluteFill}
             start={{ x: 0, y: 0 }}
             end={{ x: 0, y: 1 }}
@@ -291,11 +291,11 @@ export default function SessionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, flexDirection: 'row', backgroundColor: '#f8f9fa' },
+  container: { flex: 1, flexDirection: 'row', backgroundColor: '#f4f6fa' },
   wheelContainer: {
     width: width * 0.45,
     height: WHEEL_HEIGHT,
-    backgroundColor: '#e9ecef',
+    backgroundColor: '#e2e8f0',
     position: 'relative',
     overflow: 'hidden',
     alignSelf: 'center'
@@ -305,10 +305,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.35)',
     borderRadius: 14,
   },
-  itemText: { fontSize: 18, fontWeight: 'bold', color: '#343a40' },
+  itemText: { fontSize: 18, fontWeight: 'bold', color: '#0f172a' },
   itemTextActive: { color: '#1b1f24' },
-  subText: { fontSize: 14, color: '#6c757d' },
-  subTextActive: { color: '#343a40' },
+  subText: { fontSize: 14, color: '#64748b' },
+  subTextActive: { color: '#0f172a' },
   arrowContainer: {
     position: 'absolute',
     right: -8,
@@ -318,13 +318,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     zIndex: 3,
   },
-  arrow: { fontSize: 28, color: '#007bff' },
+  arrow: { fontSize: 28, color: '#2563eb' },
   fadeOverlay: {
     position: 'absolute',
     left: 0,
     right: 0,
     height: ITEM_HEIGHT * 1.25,
-    //backgroundColor: '#e9ecef',
+    //backgroundColor: '#e2e8f0',
     //opacity: 0.9,
     zIndex: 2,
   },
@@ -348,8 +348,8 @@ const styles = StyleSheet.create({
     // Add elevation for Android
     elevation: 4,
   },  
-  editButton: { backgroundColor: '#007bff' },
-  deleteButton: { backgroundColor: '#dc3545' },
+  editButton: { backgroundColor: '#2563eb' },
+  deleteButton: { backgroundColor: '#c62828' },
   buttonText: { color: '#fff', fontWeight: 'bold' },
   placeholder: { textAlign: 'center', fontSize: 16, color: '#999' },
 

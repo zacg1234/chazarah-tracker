@@ -1,7 +1,10 @@
+import { useFamily } from '@/providers/FamilyProvider';
+import { createSubAccount, deleteSubAccount } from '@/utils/profileutil';
+import { getSkipNote, setSkipNote } from '@/utils/prefs';
 import { deleteAccount, getLoggedInUser, handleLogout, updateLoggedInUserProfile } from '@/utils/authutil';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function ProfileModal() {
     const [user, setUser] = useState<any>(null);
@@ -9,6 +12,11 @@ export default function ProfileModal() {
     const [lastname, setLastname] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [askForNote, setAskForNote] = useState(true);
+    const { profiles, active, setActive, reload } = useFamily();
+    const [newFirst, setNewFirst] = useState('');
+    const [newLast, setNewLast] = useState('');
+    const [adding, setAdding] = useState(false);
     const router = useRouter();
     const [loading, setLoading] = useState(true);
 
@@ -16,6 +24,7 @@ export default function ProfileModal() {
         const fetchData = async () => {
             try {
                 setLoading(true);
+                setAskForNote(!(await getSkipNote()));
                 const userObj = await getLoggedInUser();
                 setUser(userObj);
                 setFirstname(userObj?.user_metadata?.firstname || '');
@@ -31,14 +40,49 @@ export default function ProfileModal() {
         fetchData();
     }, []);
 
+    const handleAddProfile = async () => {
+        if (!user) return;
+        try {
+            setAdding(true);
+            const created = await createSubAccount(user, newFirst, newLast);
+            await reload();
+            setActive(created.id);
+            setNewFirst('');
+            setNewLast('');
+            Alert.alert('Profile added', `${created.name} was added. Ask your administrator to set their weekly obligation.`);
+        } catch (error: Error | any) {
+            Alert.alert('Could not add profile', error?.message ?? 'Something went wrong.');
+        } finally {
+            setAdding(false);
+        }
+    };
+
+    const handleRemoveProfile = (id: string, name: string) => {
+        Alert.alert('Remove profile', `Remove ${name} and all of their sessions? This cannot be undone.`, [
+            { text: 'Cancel', style: 'cancel' },
+            {
+                text: 'Remove', style: 'destructive', onPress: async () => {
+                    try {
+                        await deleteSubAccount(id);
+                        if (active?.id === id && user) setActive(user.id);
+                        await reload();
+                    } catch (error: Error | any) {
+                        Alert.alert('Error', error?.message ?? 'Failed to remove profile.');
+                    }
+                },
+            },
+        ]);
+    };
+
     const handleSave = async () => {
         try {
             await updateLoggedInUserProfile({
                 firstname,
                 lastname,
-                email,
                 password
             }, setLoading);
+            setPassword('');
+            reload().catch(() => { });
             Alert.alert('Success', 'Profile updated successfully.');
         } catch (error: Error | any) {
             Alert.alert('Error', error.message);
@@ -82,7 +126,7 @@ export default function ProfileModal() {
                                     onChangeText={setFirstname}
                                     placeholder="First name"
                                     autoCapitalize="words"
-                                    placeholderTextColor={"#6c6c6cff"}
+                                    placeholderTextColor={"#94a3b8"}
                                 />
                             </View>
 
@@ -94,7 +138,7 @@ export default function ProfileModal() {
                                     onChangeText={setLastname}
                                     placeholder="Last name"
                                     autoCapitalize="words"
-                                    placeholderTextColor={"#6c6c6cff"}
+                                    placeholderTextColor={"#94a3b8"}
                                 />
                             </View>
 
@@ -108,7 +152,7 @@ export default function ProfileModal() {
                                     placeholder="name@example.com"
                                     keyboardType="email-address"
                                     autoCapitalize="none"
-                                    placeholderTextColor={"#6c6c6cff"}
+                                    placeholderTextColor={"#94a3b8"}
                                 />
                             </View>
 
@@ -118,9 +162,46 @@ export default function ProfileModal() {
                                     style={styles.input}
                                     value={password}
                                     onChangeText={setPassword}
+                                    secureTextEntry
+                                    autoCapitalize="none"
                                     placeholder="New password"
-                                    placeholderTextColor={"#6c6c6cff"}
+                                    placeholderTextColor={"#94a3b8"}
                                 />
+                            </View>
+
+                            <View style={styles.switchRow}>
+                                <View style={{ flex: 1, paddingRight: 12 }}>
+                                    <Text style={styles.label}>Ask for a note after timer sessions</Text>
+                                    <Text style={styles.switchHint}>Turn off to save timer sessions without the note prompt.</Text>
+                                </View>
+                                <Switch
+                                    value={askForNote}
+                                    onValueChange={(v) => { setAskForNote(v); setSkipNote(!v); }}
+                                />
+                            </View>
+
+                            <View style={styles.familySection}>
+                                <Text style={styles.label}>Family profiles</Text>
+                                <Text style={styles.switchHint}>
+                                    Add a family member to enter their minutes from your account, then switch between profiles from the bar at the top.
+                                </Text>
+                                {profiles.filter((p) => !p.isSelf).map((p) => (
+                                    <View key={p.id} style={styles.familyRow}>
+                                        <Text style={styles.familyName}>{p.name}</Text>
+                                        <TouchableOpacity onPress={() => handleRemoveProfile(p.id, p.name)}>
+                                            <Text style={styles.familyRemove}>Remove</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                ))}
+                                <View style={styles.familyAddRow}>
+                                    <TextInput style={[styles.input, { flex: 1, width: undefined, marginBottom: 8, minWidth: 0 }]} value={newFirst} onChangeText={setNewFirst}
+                                        placeholder="First name" autoCapitalize="words" placeholderTextColor="#94a3b8" />
+                                    <TextInput style={[styles.input, { flex: 1, width: undefined, marginBottom: 8, minWidth: 0 }]} value={newLast} onChangeText={setNewLast}
+                                        placeholder="Last name" autoCapitalize="words" placeholderTextColor="#94a3b8" />
+                                </View>
+                                <TouchableOpacity style={styles.addProfileButton} onPress={handleAddProfile} disabled={adding}>
+                                    <Text style={styles.addProfileText}>{adding ? 'Adding...' : 'Add family member'}</Text>
+                                </TouchableOpacity>
                             </View>
 
                             <View style={styles.buttonRow}>
@@ -167,6 +248,15 @@ export default function ProfileModal() {
 }
 
 const styles = StyleSheet.create({
+    familySection: { marginBottom: 20 },
+    familyRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
+    familyName: { fontSize: 16, color: '#0f172a' },
+    familyRemove: { color: '#c62828', fontWeight: '600' },
+    familyAddRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
+    addProfileButton: { borderWidth: 1, borderColor: '#2563eb', borderRadius: 10, paddingVertical: 11, alignItems: 'center', marginTop: 4 },
+    addProfileText: { color: '#2563eb', fontWeight: '700' },
+    switchRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+    switchHint: { fontSize: 12, color: '#64748b', marginTop: 2 },
     container: {
         flex: 1,
         justifyContent: 'center',
@@ -246,7 +336,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     saveButton: {
-        backgroundColor: '#007AFF',
+        backgroundColor: '#2563eb',
         paddingVertical: 12,
         paddingHorizontal: 24,
         borderRadius: 8,

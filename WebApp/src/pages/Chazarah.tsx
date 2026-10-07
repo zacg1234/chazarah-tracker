@@ -9,7 +9,7 @@ import { msToMinutes, to12HourTime } from '@/utils/timeutil';
 import { isCurrentYear } from '@/utils/yearutils';
 
 export default function Chazarah() {
-  const { selectedYear, sessions } = useAppData();
+  const { selectedYear, sessions, activeProfile } = useAppData();
   const { current, owedNow, loading } = useQuarters();
   const [manualVisible, setManualVisible] = useState(false);
   const recent = sessions.slice(-5).reverse();
@@ -23,7 +23,7 @@ export default function Chazarah() {
         <section className="card timer-card">
           {active ? (
             <>
-              <Stopwatch />
+              {activeProfile && <Stopwatch key={activeProfile.id} />}
               <button className="btn outline" onClick={() => setManualVisible(true)}>+ Add a session manually</button>
               <ManualSessionEntry visible={manualVisible} onClose={() => setManualVisible(false)} mode="add" />
             </>

@@ -1,13 +1,16 @@
 import type { Year } from '@/types/year';
-import { getLoggedInUser } from '@/utils/authutil';
+import ProfileSwitcher from '@/components/ProfileSwitcher';
+import { useFamily } from '@/providers/FamilyProvider';
 import { getSessionsByUserAndYear } from '@/utils/sessionutil';
 import { fetchYears, getCurrentYear } from '@/utils/yearutils';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import { Tabs, useRouter } from 'expo-router';
 import { createContext, useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Platform, Text, TouchableOpacity, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, Linking, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+
+const CHART_URL = 'https://chazarahtracker.com/chart';
 
 export const YearContext = createContext<Year | null>(null);
 export const UserContext = createContext<any>(null);
@@ -21,7 +24,8 @@ export default function TabsLayout() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   //const [showPicker, setShowPicker] = useState(false);
-  const [user, setUser] = useState<any>();
+  const { active: user, profiles } = useFamily(); // whoever is being viewed/entered for
+  const showSwitcher = profiles.length > 1; // the switcher bar then covers the status bar area
   const router = useRouter();
 
   // 🔹 Fetch years from Supabase
@@ -33,10 +37,8 @@ export default function TabsLayout() {
         setYears(fetchedYears);
         const defaultYear = getCurrentYear(fetchedYears);
         setSelectedYear(defaultYear ?? fetchedYears[0] ?? null);
-        const userObj = await getLoggedInUser();
-        setUser(userObj);
       } catch (error) {
-        Alert.alert('Error', 'Failed to load years or user data.');
+        Alert.alert('Error', 'Failed to load years.');
       } finally {
         setLoading(false);
       }
@@ -50,6 +52,9 @@ export default function TabsLayout() {
       try {
         const data = await getSessionsByUserAndYear(user.id, selectedYear.JewishYear);
         setSessions(data || []);
+      } catch (e) {
+        console.error('Failed to load sessions', e);
+        Alert.alert('Error', 'Failed to load sessions.');
       } finally {
         setSessionsLoading(false);
       }
@@ -70,9 +75,14 @@ export default function TabsLayout() {
       <YearContext.Provider value={selectedYear}>
         <SessionsContext.Provider value={sessionsCtxValue}>
           <View style={{ flex: 1 }}>
+            <ProfileSwitcher />
             <Tabs
               screenOptions={({ route }) => ({
-                headerStyle: { backgroundColor: '#fff' },
+                headerStyle: { backgroundColor: '#fff', borderBottomColor: '#e2e8f0', borderBottomWidth: StyleSheet.hairlineWidth, shadowOpacity: 0, elevation: 0 },
+                sceneStyle: { backgroundColor: '#f4f6fa' },
+                headerStatusBarHeight: showSwitcher ? 0 : undefined,
+                tabBarStyle: { borderTopColor: '#e2e8f0' },
+                tabBarLabelStyle: { fontWeight: '600' },
                 headerTitleAlign: 'left',
 
                 // 🔹 Add picker in header
@@ -102,16 +112,16 @@ export default function TabsLayout() {
                         backgroundColor: '#fff',
                         borderRadius: 10,
                         borderWidth: 1,
-                        borderColor: '#2c3e50',
+                        borderColor: '#0f172a',
                         paddingVertical: 6,
                         paddingHorizontal: 12,
                         gap: 6,
                       }}
                     >
-                      <Text style={{ color: '#2c3e50', fontWeight: '600', fontSize: 16 }}>
+                      <Text style={{ color: '#0f172a', fontWeight: '600', fontSize: 16 }}>
                         {selectedYear?.JewishYear ?? '—'}
                       </Text>
-                      <Ionicons name="chevron-down" size={14} color="#2c3e50" />
+                      <Ionicons name="chevron-down" size={14} color="#0f172a" />
                     </TouchableOpacity>
                   ) : (
                     // Android: native dropdown Picker
@@ -120,7 +130,7 @@ export default function TabsLayout() {
                         backgroundColor: '#ffffffff',
                         borderRadius: 12,
                         borderWidth: 1,
-                        borderColor: '#2c3e50',
+                        borderColor: '#0f172a',
                         paddingHorizontal: 5,
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -129,7 +139,7 @@ export default function TabsLayout() {
                       <Picker
                         style={{
                           width: 120,
-                          color: '#2c3e50',
+                          color: '#0f172a',
                           paddingHorizontal: 0,
                           marginHorizontal: 0,
                         }}
@@ -138,7 +148,7 @@ export default function TabsLayout() {
                           const found = years.find((y) => y.JewishYear === jewishYear);
                           if (found) setSelectedYear(found);
                         }}
-                        dropdownIconColor="#2c3e50"
+                        dropdownIconColor="#0f172a"
                         mode="dropdown"
                       >
                         {years.map((yearObj) => (
@@ -154,6 +164,14 @@ export default function TabsLayout() {
 
                 // 🔹 Profile icon button
                 headerRight: () => (
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <TouchableOpacity
+                    onPress={() => Linking.openURL(CHART_URL).catch(() => Alert.alert('Error', 'Could not open the chart.'))}
+                    accessibilityLabel="Open progress chart in browser"
+                    style={{ paddingVertical: 6, paddingHorizontal: 6 }}
+                  >
+                    <Ionicons name="bar-chart-outline" size={26} color="#0f172a" />
+                  </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => router.push('/modal/profile')}
                     style={{
@@ -163,13 +181,14 @@ export default function TabsLayout() {
                       borderRadius: 6,
                     }}
                   >
-                    <Ionicons name="person-circle-outline" size={28} color="#2c3e50" />
+                    <Ionicons name="person-circle-outline" size={28} color="#0f172a" />
                   </TouchableOpacity>
+                  </View>
                 ),
 
                 // 🔹 Default tab icons restored
                 tabBarIcon: ({ color, size }) => {
-                  var iconName: keyof typeof Ionicons.glyphMap;
+                  let iconName: keyof typeof Ionicons.glyphMap;
 
                   if (route.name === 'chazarah') iconName = 'time-outline';
                   else if (route.name === 'sessions') iconName = 'list-outline';
@@ -177,8 +196,8 @@ export default function TabsLayout() {
 
                   return <Ionicons name={iconName} size={size} color={color} />;
                 },
-                tabBarActiveTintColor: '#2c3e50',
-                tabBarInactiveTintColor: '#95a5a6',
+                tabBarActiveTintColor: '#2563eb',
+                tabBarInactiveTintColor: '#94a3b8',
               })}
             >
               <Tabs.Screen name="chazarah" options={{ title: 'Chazarah' }} />

@@ -1,6 +1,7 @@
 import { supabase } from '@/services/supabaseClient';
 import type { Session } from '@/types/session';
 import type { Year } from '@/types/year';
+import { endOfDay, parseLocal } from './dateutil';
 
 // CREATE
 export async function createSession(session: Omit<Session, 'SessionId'>, year: Year) {
@@ -40,7 +41,7 @@ export async function getSessionsByUserAndYear(UserId: string, YearId: number) {
 
 // READ (sessions for user between dates)
 export async function getSessionsByUserBetweenDates(UserId: string, startDate: string, endDate: string) {
-   const endDateTime = endDate.length === 10 ? `${endDate} 23:59:59` : endDate;
+  const endDateTime = endDate.length === 10 ? `${endDate} 23:59:59` : endDate;
   const { data, error } = await supabase
     .from('TblSession')
     .select('*')
@@ -53,29 +54,23 @@ export async function getSessionsByUserBetweenDates(UserId: string, startDate: s
 }
 
 // Filter a given list of sessions between two dates (inclusive)
-export async function filterSessionsBetweenDates(sessions: Session[], startDate: string, endDate: string) {
+export function filterSessionsBetweenDates(sessions: Session[], startDate: string, endDate: string) {
   // Normalize start/end bounds (inclusive). If only date provided, assume full-day span.
   const normalizedStart = startDate.length === 10 ? `${startDate} 00:00:00` : startDate;
   const normalizedEnd = endDate.length === 10 ? `${endDate} 23:59:59` : endDate;
 
-  const start = new Date(normalizedStart.replace(' ', 'T'));
-  const end = new Date(normalizedEnd.replace(' ', 'T'));
+  const start = parseLocal(normalizedStart);
+  const end = parseLocal(normalizedEnd);
   if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) return [];
 
   const filtered = sessions.filter((s) => {
     const raw = s.SessionStartTime;
     if (!raw) return false;
-    const d = new Date(raw.replace(' ', 'T'));
+    const d = parseLocal(raw);
     if (isNaN(d.getTime())) return false;
     return d >= start && d <= end;
   });
-
-  // Sort ascending like the DB query
-  filtered.sort((a, b) => {
-    const da = new Date(a.SessionStartTime.replace(' ', 'T')).getTime();
-    const db = new Date(b.SessionStartTime.replace(' ', 'T')).getTime();
-    return da - db;
-  });
+  // Input is already sorted ascending (same as the DB query), and filter keeps order
   return filtered;
 }
 
@@ -110,12 +105,12 @@ export const validateSessionData = (session: Partial<Session>, year: Year) => {
   if (!session.SessionStartTime) errorMsg = 'Session start time is required.';
   else if (!year || !year.StartDate || !year.EndDate) errorMsg = 'Year is missing start/end date.';
   else {
-    const start = new Date(session.SessionStartTime);
+    const start = parseLocal(session.SessionStartTime);
     if (isNaN(start.getTime())) errorMsg = 'Session start time is invalid.';
     else {
       const now = new Date();
-      const yearStart = new Date(year.StartDate);
-      const yearEnd = new Date(year.EndDate);
+      const yearStart = parseLocal(year.StartDate);
+      const yearEnd = endOfDay(parseLocal(year.EndDate)); // the whole last day counts
       if (isNaN(yearStart.getTime()) || isNaN(yearEnd.getTime())) errorMsg = 'Year start/end date is invalid.';
       else if (start > now) {
         errorMsg = 'Session start time cannot be in the future.';

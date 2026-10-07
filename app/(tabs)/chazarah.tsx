@@ -3,10 +3,11 @@ import Stopwatch from '@/components/Stopwatch';
 import { isCurrentYear } from '@/utils/yearutils';
 import { useContext, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
-import { SessionsContext, YearContext } from './_layout';
+import { SessionsContext, UserContext, YearContext } from './_layout';
 
 export default function ChazarahScreen() {
     const selectedYear = useContext(YearContext);
+    const profile = useContext(UserContext);
     const { refreshSessions } = useContext(SessionsContext);
     const [manualVisible, setManualVisible] = useState(false);
 
@@ -14,11 +15,11 @@ export default function ChazarahScreen() {
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
             {isCurrentYear(selectedYear) ? (
                 <>
-                    <Stopwatch />
+                    {profile && <Stopwatch key={profile.id} />}
                     <TouchableOpacity
                         style={{
                             marginBottom: 50,
-                            backgroundColor: '#007bff',
+                            backgroundColor: '#2563eb',
                             paddingVertical: 8,
                             paddingHorizontal: 18,
                             borderRadius: 8,

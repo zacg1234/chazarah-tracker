@@ -1,4 +1,5 @@
 import { supabase } from '../services/supabaseClient';
+import { deleteSubAccount, getFamilyProfiles } from './profileutil';
 
   // 🔹 Logout handler
 export async function handleLogout() {
@@ -26,6 +27,14 @@ export async function handleLogin(email: string, password: string, setLoading?: 
     }
 }
 
+
+// Thrown by handleSignUp when the email already belongs to an account
+export class EmailAlreadyUsedError extends Error {
+    constructor() {
+        super('This email is already being used for a different account.');
+        this.name = 'EmailAlreadyUsedError';
+    }
+}
 
 export async function handleSignUp(email: string, password: string, firstname: string, lastname: string) {
     
@@ -56,10 +65,18 @@ export async function handleSignUp(email: string, password: string, firstname: s
             });
 
             if (error) {
+                if (error.code === 'user_already_exists' || /already (been )?registered/i.test(error.message)) {
+                    throw new EmailAlreadyUsedError();
+                }
                 throw new Error(error.message);
             }
-    } catch (Error: Error | any) {
-        throw new Error(Error.message);
+            // With email confirmation on, Supabase hides duplicates by returning a user with no identities
+            if (data.user && data.user.identities?.length === 0) {
+                throw new EmailAlreadyUsedError();
+            }
+    } catch (err: Error | any) {
+        if (err instanceof EmailAlreadyUsedError) throw err;
+        throw new Error(err.message);
     }
 };
 
@@ -67,6 +84,11 @@ export async function deleteAccount() {
     const { data: userResp, error: userErr } = await supabase.auth.getUser();
     if (userErr || !userResp.user) throw new Error('No logged in user.');
     const userId = userResp.user.id;
+
+    // Remove any sub-accounts (and their data) first
+    for (const profile of await getFamilyProfiles(userResp.user)) {
+        if (!profile.isSelf) await deleteSubAccount(profile.id);
+    }
 
     // Delete all user-scoped table records
     for (const table of ['TblSession', 'TblObligation', 'TblPayment']) {

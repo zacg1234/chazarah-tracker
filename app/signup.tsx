@@ -1,4 +1,4 @@
-import { handleSignUp } from '@/utils/authutil';
+import { EmailAlreadyUsedError, handleSignUp } from '@/utils/authutil';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
@@ -36,7 +36,7 @@ export default function SignUp() {
                     <TextInput
                         style={styles.input}
                         placeholder="First Name"
-                        placeholderTextColor="#777"
+                        placeholderTextColor="#94a3b8"
                         autoCapitalize="words"
                         onChangeText={setFirstname}
                         value={firstname}
@@ -45,7 +45,7 @@ export default function SignUp() {
                     <TextInput
                         style={styles.input}
                         placeholder="Last Name"
-                        placeholderTextColor="#777"
+                        placeholderTextColor="#94a3b8"
                         autoCapitalize="words"
                         onChangeText={setLastname}
                         value={lastname}
@@ -54,7 +54,7 @@ export default function SignUp() {
                     <TextInput
                         style={styles.input}
                         placeholder="Email"
-                        placeholderTextColor="#777"
+                        placeholderTextColor="#94a3b8"
                         autoCapitalize="none"
                         onChangeText={setEmail}
                         value={email}
@@ -64,9 +64,12 @@ export default function SignUp() {
                     <TextInput
                         style={styles.input}
                         placeholder="Password"
-                        placeholderTextColor="#777"
+                        placeholderTextColor="#94a3b8"
                         onChangeText={setPassword}
                         value={password}
+                        autoCapitalize="none"
+                        autoComplete="new-password"
+                        autoCorrect={false}
                     />
 
                     <TouchableOpacity style={styles.button} onPress={async () => {
@@ -75,7 +78,21 @@ export default function SignUp() {
                             await handleSignUp(email, password, firstname, lastname);
                             router.replace('/login');
                         } catch (error: Error | any) {
-                            Alert.alert('Sign Up failed', error.message);
+                            if (error instanceof EmailAlreadyUsedError) {
+                                Alert.alert(
+                                    'Email already in use',
+                                    'That email is already being used for a different account.',
+                                    [
+                                        {
+                                            text: 'Reset Password',
+                                            onPress: () => router.push({ pathname: '/forgot-password' as any, params: { email: email.trim() } }),
+                                        },
+                                        { text: 'Close', style: 'cancel' },
+                                    ]
+                                );
+                            } else {
+                                Alert.alert('Sign Up failed', error.message);
+                            }
                         } finally {
                             setLoading(false);
                         }
@@ -95,8 +112,8 @@ export default function SignUp() {
 const styles = StyleSheet.create({
     container: { width: '90%', alignItems: 'center' },
     title: { fontSize: 28, fontWeight: 'bold', marginBottom: 20 },
-    input: { width: '100%', borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, marginVertical: 8 },
-    button: { backgroundColor: '#007AFF', padding: 15, borderRadius: 8, width: '100%', alignItems: 'center', marginTop: 10 },
+    input: { width: '100%', borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 10, padding: 13, marginVertical: 6, backgroundColor: '#fff', color: '#0f172a', fontSize: 16 },
+    button: { backgroundColor: '#2563eb', padding: 15, borderRadius: 10, width: '100%', alignItems: 'center', marginTop: 10 },
     buttonText: { color: 'white', fontWeight: 'bold' },
-    link: { color: '#007AFF', marginTop: 20 },
+    link: { color: '#2563eb', marginTop: 20 },
 });

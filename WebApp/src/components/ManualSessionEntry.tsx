@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppData, useAuth } from '@/providers';
+import { useAppData } from '@/providers';
 import { createSession, updateSession } from '@/utils/sessionutil';
 
 type Props = {
@@ -16,8 +16,7 @@ const toInputValue = (d: Date) =>
   `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 
 export default function ManualSessionEntry({ visible, onClose, mode = 'add', initialSession }: Props) {
-  const { user } = useAuth();
-  const { selectedYear, refreshSessions } = useAppData();
+  const { selectedYear, refreshSessions, activeProfile } = useAppData();
   const navigate = useNavigate();
   const [when, setWhen] = useState(toInputValue(new Date()));
   const [minutes, setMinutes] = useState('');
@@ -45,7 +44,7 @@ export default function ManualSessionEntry({ visible, onClose, mode = 'add', ini
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!user?.id || !selectedYear?.JewishYear) return setError('User or year not selected.');
+    if (!activeProfile?.id || !selectedYear?.JewishYear) return setError('User or year not selected.');
     if (!minutes || isNaN(Number(minutes)) || Number(minutes) <= 0) return setError('Please enter a valid session length in minutes.');
     if (!when) return setError('Session start time is required.');
 
@@ -55,7 +54,7 @@ export default function ManualSessionEntry({ visible, onClose, mode = 'add', ini
       if (mode === 'edit' && initialSession?.SessionId) {
         await updateSession(initialSession.SessionId, { SessionStartTime, SessionLength: Number(minutes) * 60000, SessionNote: note }, selectedYear);
       } else {
-        await createSession({ UserId: user.id, YearId: selectedYear.JewishYear, SessionLength: Number(minutes) * 60000, SessionNote: note, SessionStartTime }, selectedYear);
+        await createSession({ UserId: activeProfile.id, YearId: selectedYear.JewishYear, SessionLength: Number(minutes) * 60000, SessionNote: note, SessionStartTime }, selectedYear);
       }
       await refreshSessions();
       onClose();

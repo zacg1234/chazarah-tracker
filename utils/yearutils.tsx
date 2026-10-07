@@ -1,5 +1,6 @@
 import type { Year } from '@/types/year';
 import { supabase } from '../services/supabaseClient';
+import { endOfDay, parseLocal, toLocalTimestamp } from './dateutil';
 
 export const fetchYears = async () => {
   const { data, error } = await supabase
@@ -15,99 +16,46 @@ export const fetchYears = async () => {
   return data || [];
 };
 
+// A year runs from its StartDate through the end of its EndDate (both date-only values)
+export const isDateInYear = (year: Year, date: Date) =>
+  !!year.StartDate && !!year.EndDate &&
+  parseLocal(year.StartDate) <= date && date <= endOfDay(parseLocal(year.EndDate));
+
 export const getCurrentYear = (years: Year[]) => {
   const today = new Date();
-  return years.find(
-    (y) =>
-      y.StartDate &&
-      y.EndDate &&
-      new Date(y.StartDate) <= today &&
-      today <= new Date(y.EndDate)
-  );
+  return years.find((y) => isDateInYear(y, today));
 };
 
-export const isCurrentYear = (year: Year | null) => {
-  const today = new Date();
-  if (year?.StartDate && year?.EndDate) {
-    return new Date(year.StartDate) <= today && today <= new Date(year.EndDate);
-  }
-  return false;
-};
+export const isCurrentYear = (year: Year | null) => !!year && isDateInYear(year, new Date());
 
-// Returns the quarters with their start and end dates along with quarter index
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+// Returns the quarters with their start and end dates along with quarter index.
+// The year starts the day after StartDate; leftover days go to the last quarter.
 export function getQuartersForYear(year: Year): [string, string, number][] {
-  // Use local time for all calculations
-  const start = setStartOfDay(addDays(new Date(year.StartDate), 1));
-  const end = setEndOfDay(new Date(year.EndDate));
-  if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) return [];
+  const startDay = parseLocal(year.StartDate);
+  startDay.setHours(0, 0, 0, 0);
+  startDay.setDate(startDay.getDate() + 1);
+  const endDay = parseLocal(year.EndDate);
+  endDay.setHours(0, 0, 0, 0);
+  if (isNaN(startDay.getTime()) || isNaN(endDay.getTime()) || endDay <= startDay) return [];
 
-  // Count days between start and end (exclusive)
-  const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
-  const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
-  let days = Math.floor((endDay.getTime() - startDay.getTime()) / (24 * 60 * 60 * 1000) + 1);
-  let extraDay = 0;
-  const remainderDays = days % 4;
-  days -= remainderDays;
-  extraDay = remainderDays;
+  // Inclusive day count (round, not floor: DST changes make a "day" 23 or 25 hours)
+  const days = Math.round((endDay.getTime() - startDay.getTime()) / DAY_MS) + 1;
   const daysPerQuarter = Math.floor(days / 4);
 
   const quarters: [string, string, number][] = [];
-  let current = new Date(startDay);
+  const current = new Date(startDay);
   for (let i = 0; i < 4; i++) {
-    const qStart = setStartOfDay(current);
-    let qEnd;
-    if (i === 3) {
-      // Last quarter: add extra day and go to end
-      qEnd = new Date(current);
-      qEnd.setDate(qEnd.getDate() + daysPerQuarter + extraDay - 1);
-      if (qEnd > endDay) qEnd = new Date(endDay);
-      qEnd = setEndOfDay(qEnd);
-    } else {
-      qEnd = new Date(current);
-      qEnd.setDate(qEnd.getDate() + daysPerQuarter - 1);
-      qEnd = setEndOfDay(qEnd);
-    }
-
-    quarters.push([
-      toLocaleStringISOFormat(qStart),
-      toLocaleStringISOFormat(qEnd),
-      i + 1
-    ]);
-    // Next quarter starts the day after this one ends
-    current = new Date(qEnd);
+    const qStart = new Date(current);
+    qStart.setHours(0, 0, 1, 0);
+    const qEnd = new Date(current);
+    // Last quarter runs to the end of the year, picking up any remainder days
+    qEnd.setDate(qEnd.getDate() + (i === 3 ? days - 3 * daysPerQuarter : daysPerQuarter) - 1);
+    quarters.push([toLocalTimestamp(qStart), toLocalTimestamp(endOfDay(qEnd)), i + 1]);
+    current.setTime(qEnd.getTime());
     current.setDate(current.getDate() + 1);
-    current = setStartOfDay(current);
+    current.setHours(0, 0, 0, 0);
   }
   return quarters;
 }
-
-// Helper to set time to start of day (00:01)
-  function setStartOfDay(date: Date): Date {
-    const d = new Date(date);
-    d.setHours(0, 0, 1, 0);
-    return d;
-  }
-  // Helper to set time to end of day (23:59)
-  function setEndOfDay(date: Date): Date {
-    const d = new Date(date);
-    d.setHours(23, 59, 59, 0);
-    return d;
-  }
-
-  function toLocaleStringISOFormat(date: Date): string {
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    const hour = date.getHours().toString().padStart(2, '0');
-    const minute = date.getMinutes().toString().padStart(2, '0');
-    const second = date.getSeconds().toString().padStart(2, '0');
-    return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
-  }
-
-  
-
-  function addDays(date: Date, days: number): Date {
-    const result = new Date(date);
-    result.setDate(result.getDate() + days);
-    return result;
-  }

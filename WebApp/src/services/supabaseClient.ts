@@ -12,3 +12,9 @@ export const supabase = createClient(
     },
   }
 );
+
+// Throwaway client that never touches the stored session (used to create sub-accounts)
+export const createEphemeralClient = () =>
+  createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });

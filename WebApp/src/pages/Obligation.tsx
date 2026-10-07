@@ -26,6 +26,10 @@ export default function Obligation() {
           <span className="stat-note">{ok ? 'You’re all caught up 🎉' : 'Keep going!'}</span>
         </div>
         <div className="stat">
+          <span className="stat-label">Weekly obligation</span>
+          <span className="stat-value">{current ? current.ObligationPerWeek : 0}<small> min</small></span>
+        </div>
+        <div className="stat">
           <span className="stat-label">Chazered this quarter</span>
           <span className="stat-value">{current ? Math.floor(current.MinutesChazered) : 0}</span>
         </div>

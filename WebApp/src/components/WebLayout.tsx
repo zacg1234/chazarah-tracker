@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAppData, useAuth } from '@/providers';
 import { handleLogout } from '@/utils/authutil';
 
+import ProfileBar from './ProfileBar';
 import { NAV } from './nav';
 
 export function WebLayout() {
@@ -34,14 +35,14 @@ export function WebLayout() {
       <header className="header">
         <div className="header-inner">
           <NavLink to="/chazarah" className="logo">
-            <img src="/AALogo.png" alt="" />
-            <span>Chazarah Tracker</span>
+            <img src="/AALogo.png" alt="Kollel Ateres Ami" />
           </NavLink>
 
           <nav className="topnav">
             {NAV.map((n) => (
               <NavLink key={n.to} to={n.to}>{n.label}</NavLink>
             ))}
+            <NavLink to="/chart">Chart</NavLink>
           </nav>
 
           <div className="header-right">
@@ -65,7 +66,6 @@ export function WebLayout() {
                 <div className="menu">
                   <div className="menu-who">{name}</div>
                   <button onClick={() => { setMenuOpen(false); navigate('/profile'); }}>Profile</button>
-                  <button onClick={() => { setMenuOpen(false); navigate('/chart'); }}>Progress chart</button>
                   <button className="red" onClick={logout}>Log out</button>
                 </div>
               )}
@@ -73,6 +73,7 @@ export function WebLayout() {
           </div>
         </div>
       </header>
+      <ProfileBar />
 
       <main className="page"><Outlet /></main>
 

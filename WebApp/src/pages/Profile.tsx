@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { useAppData, useAuth } from '@/providers';
+import { createSubAccount, deleteSubAccount } from '@/utils/profileutil';
+import { getSkipNote, setSkipNote } from '@/utils/prefs';
 import { handleLogout } from '@/utils/authutil';
 import { deleteAccount, getLoggedInUser, updateLoggedInUserProfile } from '@/utils/authutil';
 
@@ -16,6 +19,13 @@ export default function Profile() {
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [askForNote, setAskForNote] = useState(!getSkipNote());
+  const { user } = useAuth();
+  const { profiles, activeProfile, setActiveProfile, reloadProfiles } = useAppData();
+  const [newFirst, setNewFirst] = useState('');
+  const [newLast, setNewLast] = useState('');
+  const [adding, setAdding] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -38,7 +48,39 @@ export default function Profile() {
     try {
       await updateLoggedInUserProfile({ firstname, lastname, password });
       setPassword('');
+      reloadProfiles().catch(() => {});
       setInfo('Profile updated successfully.');
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  const addProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    setError(''); setInfo('');
+    setAdding(true);
+    try {
+      const created = await createSubAccount(user, newFirst, newLast);
+      await reloadProfiles();
+      setActiveProfile(created.id);
+      setNewFirst(''); setNewLast('');
+      setInfo(`${created.name} was added. Ask your administrator to set their weekly obligation.`);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const removeProfile = async () => {
+    if (!removeTarget || !user) return;
+    const { id } = removeTarget;
+    setRemoveTarget(null);
+    try {
+      await deleteSubAccount(id);
+      if (activeProfile?.id === id) setActiveProfile(user.id);
+      await reloadProfiles();
     } catch (err: any) {
       setError(err.message);
     }
@@ -69,6 +111,10 @@ export default function Profile() {
         <label className="field">New password
           <input type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Leave blank to keep current" />
         </label>
+        <label className="check">
+          <input type="checkbox" checked={askForNote} onChange={(e) => { setAskForNote(e.target.checked); setSkipNote(!e.target.checked); }} />
+          <span>Ask for a note after timer sessions</span>
+        </label>
         {error && <p className="msg error">{error}</p>}
         {info && <p className="msg ok">{info}</p>}
         <div className="row end">
@@ -77,9 +123,34 @@ export default function Profile() {
         </div>
       </form>
 
+      <form className="card" onSubmit={addProfile}>
+        <h2>Family profiles</h2>
+        <p className="muted small">Add a family member to enter their minutes from your account, then switch between profiles from the bar at the top.</p>
+        {profiles.filter((p) => !p.isSelf).map((p) => (
+          <div key={p.id} className="family-row">
+            <span>{p.name}</span>
+            <button type="button" className="btn danger-outline sm" onClick={() => setRemoveTarget({ id: p.id, name: p.name })}>Remove</button>
+          </div>
+        ))}
+        <div className="grid-2" style={{ marginTop: 14 }}>
+          <label className="field">First name<input value={newFirst} onChange={(e) => setNewFirst(e.target.value)} /></label>
+          <label className="field">Last name<input value={newLast} onChange={(e) => setNewLast(e.target.value)} /></label>
+        </div>
+        <div className="row end"><button className="btn outline" disabled={adding}>{adding ? 'Adding…' : 'Add family member'}</button></div>
+      </form>
+
+      <ConfirmDialog
+        open={!!removeTarget}
+        title="Remove profile?"
+        message={`Remove ${removeTarget?.name ?? ''} and all of their sessions? This can’t be undone.`}
+        confirmLabel="Remove"
+        danger
+        onConfirm={removeProfile}
+        onCancel={() => setRemoveTarget(null)}
+      />
+
       {isMobile && (
         <section className="card m-links">
-          <Link to="/chart">Progress chart</Link>
           <button className="btn outline block" onClick={async () => { await handleLogout(); navigate('/login', { replace: true }); }}>Log out</button>
         </section>
       )}

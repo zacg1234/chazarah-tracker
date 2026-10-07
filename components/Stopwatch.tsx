@@ -1,4 +1,6 @@
 import { SessionsContext, UserContext, YearContext } from '@/app/(tabs)/_layout';
+import { toLocalTimestamp } from '@/utils/dateutil';
+import { getSkipNote, setSkipNote } from '@/utils/prefs';
 import { createSession } from '@/utils/sessionutil';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -8,7 +10,7 @@ import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Alert, AppState, KeyboardAvoidingView, Modal, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 
-const STORAGE_KEY = 'chazarah_stopwatch';
+const LEGACY_STORAGE_KEY = 'chazarah_stopwatch';
 
 function formatTime(ms: number) {
     const totalSeconds = Math.floor(ms / 1000);
@@ -23,20 +25,27 @@ export default function Stopwatch() {
     const [startTimestamp, setStartTimestamp] = useState<number | null>(null);
     const [fontLoaded, setFontLoaded] = useState(false);
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const [stateLoaded, setStateLoaded] = useState(false);
     const [noteModalVisible, setNoteModalVisible] = useState(false);
     const [note, setNote] = useState('');
 
 
     const selectedYear = useContext(YearContext);
     const user = useContext(UserContext);
+    // Each profile has its own timer (the logged-in user keeps the original key)
+    const STORAGE_KEY = !user || user.isSelf ? LEGACY_STORAGE_KEY : `${LEGACY_STORAGE_KEY}_${user.id}`;
     const { refreshSessions } = useContext(SessionsContext);
 
     // ✅ Load font once
     useEffect(() => {
         (async () => {
-            await Font.loadAsync({
-                'AlarmClock': require('../assets/fonts/AlarmClock.ttf'),
-            });
+            try {
+                await Font.loadAsync({
+                    'AlarmClock': require('../assets/fonts/AlarmClock.ttf'),
+                });
+            } catch (e) {
+                console.error('Error loading font', e);
+            }
             setFontLoaded(true);
         })();
     }, []);
@@ -55,17 +64,19 @@ export default function Stopwatch() {
             } catch (e) {
                 console.error('Error loading stopwatch state', e);
             }
+            setStateLoaded(true);
         };
         load();
     }, []);
 
     // ✅ Save state whenever it changes
     useEffect(() => {
+        if (!stateLoaded) return; // don't overwrite saved state with defaults before it has loaded
         AsyncStorage.setItem(
             STORAGE_KEY,
             JSON.stringify({ elapsed, isRunning, startTimestamp })
         ).catch((e) => console.error('Error saving stopwatch state', e));
-    }, [elapsed, isRunning, startTimestamp]);
+    }, [stateLoaded, elapsed, isRunning, startTimestamp]);
 
     // ✅ Stopwatch timer effect
     useEffect(() => {
@@ -138,21 +149,31 @@ export default function Stopwatch() {
             Alert.alert('Error', 'No user logged in.');
             return;
         }
+        if (elapsed < 1000) {
+            Alert.alert('Error', 'Nothing to submit yet. Start the stopwatch first.');
+            return;
+        }
+        const length = isRunning && startTimestamp ? Date.now() - startTimestamp : elapsed;
+        setElapsed(length);
         setIsRunning(false);
+        if (await getSkipNote()) {
+            await handleFinalSubmit('', length);
+            return;
+        }
         setNote('');
         setNoteModalVisible(true);
     };
 
-    const handleFinalSubmit = async () => {
-        if (!selectedYear) return;
+    // "Don't ask again" in the note prompt: remember the choice and save without a note
+    const handleSkipForever = async () => {
+        await setSkipNote(true);
+        await handleFinalSubmit('');
+    };
+
+    const handleFinalSubmit = async (noteText: string, length: number = elapsed) => {
+        if (!selectedYear || !user) return;
         // Save session start time as local time string (YYYY-MM-DD HH:mm:ss)
-        let sessionStartTime = '';
-        if (startTimestamp) {
-            const d = new Date(startTimestamp);
-            // Manually format as 'YYYY-MM-DD HH:mm:ss' in local time
-            const pad = (n: number) => n.toString().padStart(2, '0');
-            sessionStartTime = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-        }
+        const sessionStartTime = startTimestamp ? toLocalTimestamp(new Date(startTimestamp)) : '';
         if (!sessionStartTime) {
             Alert.alert('Error', 'Session start time is missing. Please start and stop the stopwatch before submitting.');
             return;
@@ -161,22 +182,22 @@ export default function Stopwatch() {
             await createSession({
                 UserId: user.id,
                 YearId: selectedYear.JewishYear,
-                SessionLength: elapsed,
-                SessionNote: note,
+                SessionLength: length,
+                SessionNote: noteText,
                 SessionStartTime: sessionStartTime,
             }, selectedYear);
             // Refresh shared sessions context so other tabs update immediately
             await refreshSessions();
-            router.replace('/obligation');
-            Alert.alert('Success', `Session Submitted: ${formatTime(elapsed)} min.`);
-        } catch (error: Error | any) {
-            Alert.alert('Error', error.message);
-        }
-        finally {
-            setNoteModalVisible(false);
+            // Only clear the timer once the session was actually saved
             setIsRunning(false);
             setElapsed(0);
             setStartTimestamp(null);
+            setNoteModalVisible(false);
+            router.replace('/obligation');
+            Alert.alert('Success', `Session Submitted: ${formatTime(length)} min.`);
+        } catch (error: Error | any) {
+            setNoteModalVisible(false);
+            Alert.alert('Error', error?.message ?? 'Failed to save session.');
         }
     }
 
@@ -259,7 +280,7 @@ export default function Stopwatch() {
                             onChangeText={setNote}
                             multiline
                             autoFocus
-                            placeholderTextColor={'#818181ff'}
+                            placeholderTextColor={'#94a3b8'}
                         />
                         <View style={styles.noteButtonsRow}>
                             <TouchableOpacity
@@ -270,13 +291,16 @@ export default function Stopwatch() {
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={[styles.noteButton, styles.noteSubmit]}
-                                onPress={handleFinalSubmit}
+                                onPress={() => handleFinalSubmit(note)}
                             >
                                 <Text style={styles.noteButtonText}>
                                     {note.trim() === '' ? 'Skip' : 'Submit'}
                                 </Text>
                             </TouchableOpacity>
                         </View>
+                        <TouchableOpacity onPress={handleSkipForever} style={styles.skipForever}>
+                            <Text style={styles.skipForeverText}>Don’t ask me for notes again</Text>
+                        </TouchableOpacity>
                     </View>
                 </KeyboardAvoidingView>
             </Modal>
@@ -361,7 +385,7 @@ const styles = StyleSheet.create({
     noteTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
     noteInput: {
         borderWidth: 1,
-        borderColor: '#ccc',
+        borderColor: '#cbd5e1',
         borderRadius: 8,
         padding: 10,
         width: '100%',
@@ -370,6 +394,8 @@ const styles = StyleSheet.create({
         minHeight: 80,
         textAlignVertical: 'top'
     },
+    skipForever: { marginTop: 14 },
+    skipForeverText: { color: '#64748b', fontSize: 13, textDecorationLine: 'underline' },
     noteButtonsRow: { flexDirection: 'row', gap: 12 },
     noteButton: {
         paddingVertical: 10,
@@ -378,7 +404,7 @@ const styles = StyleSheet.create({
         minWidth: 90,
         alignItems: 'center',
     },
-    noteCancel: { backgroundColor: '#6c757d' },
-    noteSubmit: { backgroundColor: '#007bff' },
+    noteCancel: { backgroundColor: '#64748b' },
+    noteSubmit: { backgroundColor: '#2563eb' },
     noteButtonText: { color: '#fff', fontWeight: 'bold' }
 });

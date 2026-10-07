@@ -3,6 +3,7 @@ export type QuarterTurnOut= {
     QuarterStart: string;
     QuarterEnd: string;
     IsActive: boolean;
+    ObligationPerWeek: number;
     MinutesOwed: number;
     MinutesChazered: number;
     AmountPaid: number;

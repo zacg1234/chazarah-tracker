@@ -81,11 +81,6 @@ export default function ChartPage() {
         {state && state.rows.length === 0 && <p className="muted center">No data available.</p>}
         {state && state.rows.length > 0 && (
           <>
-          <div className="chart-legend">
-            {[['owed', 'Minutes Owed to Date'], ['extra', 'Extra Minutes Learned'], ['learned', 'Minutes Learned to Date']].map(([k, label]) => (
-              <span key={k}><i style={{ background: COLORS[k as keyof typeof COLORS] }} />{label}</span>
-            ))}
-          </div>
           <div className="chart-box">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={state.rows} margin={{ top: 4, right: 24, left: 8, bottom: 8 }} barCategoryGap="22%">

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
+import { getSkipNote, setSkipNote } from '@/utils/prefs';
 import { useNavigate } from 'react-router-dom';
-import { useAppData, useAuth } from '@/providers';
+import { useAppData } from '@/providers';
 import ConfirmDialog from './ConfirmDialog';
 import { createSession } from '@/utils/sessionutil';
 
-const STORAGE_KEY = 'chazarah_stopwatch';
+const LEGACY_STORAGE_KEY = 'chazarah_stopwatch';
 const pad = (n: number) => n.toString().padStart(2, '0');
 
 function formatTime(ms: number) {
@@ -12,16 +13,19 @@ function formatTime(ms: number) {
   return `${Math.floor(total / 60)}:${pad(total % 60)}`;
 }
 
-function loadSaved() {
+function loadSaved(storageKey: string) {
   try {
-    const json = localStorage.getItem(STORAGE_KEY);
+    const json = localStorage.getItem(storageKey);
     if (json) return JSON.parse(json);
   } catch { /* ignore */ }
   return {};
 }
 
 export default function Stopwatch() {
-  const saved = useRef(loadSaved()).current;
+  const { selectedYear, refreshSessions, activeProfile } = useAppData();
+  // Each profile has its own timer (the logged-in user keeps the original key)
+  const STORAGE_KEY = !activeProfile || activeProfile.isSelf ? LEGACY_STORAGE_KEY : `${LEGACY_STORAGE_KEY}_${activeProfile.id}`;
+  const saved = useRef(loadSaved(STORAGE_KEY)).current;
   const [elapsed, setElapsed] = useState<number>(saved.elapsed ?? 0);
   const [isRunning, setIsRunning] = useState<boolean>(saved.isRunning ?? false);
   const [startTimestamp, setStartTimestamp] = useState<number | null>(saved.startTimestamp ?? null);
@@ -29,14 +33,12 @@ export default function Stopwatch() {
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
   const [confirmReset, setConfirmReset] = useState(false);
-  const { user } = useAuth();
-  const { selectedYear, refreshSessions } = useAppData();
   const navigate = useNavigate();
 
   // Persist so the timer survives reloads (like AsyncStorage on mobile)
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ elapsed, isRunning, startTimestamp })); } catch { /* ignore */ }
-  }, [elapsed, isRunning, startTimestamp]);
+  }, [STORAGE_KEY, elapsed, isRunning, startTimestamp]);
 
   // Tick; derive from the wall clock so background tabs stay accurate
   useEffect(() => {
@@ -62,19 +64,29 @@ export default function Stopwatch() {
   const submit = () => {
     setIsRunning(false);
     setError('');
+    if (getSkipNote()) {
+      finalSubmit('');
+      return;
+    }
     setNote('');
     setNoteOpen(true);
   };
 
-  const finalSubmit = async () => {
-    if (!selectedYear || !user || !startTimestamp) {
+  // "Don't ask again" in the note prompt: remember the choice and save without a note
+  const skipForever = () => {
+    setSkipNote(true);
+    finalSubmit('');
+  };
+
+  const finalSubmit = async (noteText: string) => {
+    if (!selectedYear || !activeProfile || !startTimestamp) {
       setError('Session start time is missing. Please start the stopwatch before submitting.');
       return;
     }
     const d = new Date(startTimestamp);
     const SessionStartTime = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
     try {
-      await createSession({ UserId: user.id, YearId: selectedYear.JewishYear, SessionLength: elapsed, SessionNote: note, SessionStartTime }, selectedYear);
+      await createSession({ UserId: activeProfile.id, YearId: selectedYear.JewishYear, SessionLength: elapsed, SessionNote: noteText, SessionStartTime }, selectedYear);
       await refreshSessions();
       setNoteOpen(false);
       setElapsed(0); setStartTimestamp(null);
@@ -111,6 +123,8 @@ export default function Stopwatch() {
         onCancel={() => setConfirmReset(false)}
       />
 
+      {error && !noteOpen && <p className="msg error">{error}</p>}
+
       {noteOpen && (
         <div className="modal-overlay" onClick={() => setNoteOpen(false)}>
           <div className="modal-card small" onClick={(e) => e.stopPropagation()}>
@@ -119,8 +133,9 @@ export default function Stopwatch() {
             {error && <p className="msg error">{error}</p>}
             <div className="row end">
               <button className="btn ghost" onClick={() => setNoteOpen(false)}>Cancel</button>
-              <button className="btn primary" onClick={finalSubmit}>{note.trim() === '' ? 'Skip' : 'Submit'}</button>
+              <button className="btn primary" onClick={() => finalSubmit(note)}>{note.trim() === '' ? 'Skip' : 'Submit'}</button>
             </div>
+            <p className="center-btn"><button className="link-btn small" onClick={skipForever}>Don’t ask me for notes again</button></p>
           </div>
         </div>
       )}
