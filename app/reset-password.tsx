@@ -1,3 +1,4 @@
+import { colors } from '@/constants/theme';
 import { useAuth } from '@/providers/AuthProvider';
 import { showAlert } from '@/components/Dialog';
 import { setNewPassword } from '@/utils/authutil';
@@ -56,7 +57,7 @@ export default function ResetPassword() {
   }
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, backgroundColor: '#f4f6fa' }}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, backgroundColor: colors.bg }}>
       <ScrollView
         contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center' }}
         keyboardShouldPersistTaps="handled"
@@ -90,7 +91,7 @@ export default function ResetPassword() {
 
 const styles = StyleSheet.create({
   container: { width: '90%', alignItems: 'center' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, backgroundColor: '#f4f6fa' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, backgroundColor: colors.bg },
   title: { fontSize: 26, fontWeight: 'bold', marginBottom: 12, textAlign: 'center' },
   subtitle: { fontSize: 15, lineHeight: 22, color: '#64748b', textAlign: 'center', marginBottom: 28 },
 });

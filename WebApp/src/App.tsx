@@ -23,7 +23,7 @@ export default function App() {
     <AuthProvider>
       <Routes>
         {/* Public */}
-        <Route path="/chart" element={<ChartPage />} />
+        <Route path="/chart" element={<ChartPage standalone />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/login" element={<Login />} />
@@ -42,6 +42,7 @@ export default function App() {
           <Route path="/chazarah" element={<Chazarah />} />
           <Route path="/sessions" element={<Sessions />} />
           <Route path="/obligation" element={<Obligation />} />
+          <Route path="/progress" element={<ChartPage />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
 

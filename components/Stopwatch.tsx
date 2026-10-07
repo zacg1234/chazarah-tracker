@@ -5,6 +5,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useFamily } from '@/providers/FamilyProvider';
 import { addToggleListener, clearStopwatch, getNativeState, postMessage, requestNotificationPermission, syncStopwatch } from '@/modules/stopwatch-notification';
 import { toLocalTimestamp } from '@/utils/dateutil';
+import { msToMinutes } from '@/utils/timeutil';
 import { getSkipNote, setSkipNote } from '@/utils/prefs';
 import { createSessionOrQueue } from '@/utils/sessionutil';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -20,7 +21,7 @@ import { AppState, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text, TextInput } from '@/components/Text';
 
 
-const LEGACY_STORAGE_KEY = 'chazarah_stopwatch';
+const STORAGE_PREFIX = 'chazarah_stopwatch';
 
 function formatTime(ms: number) {
     const totalSeconds = Math.floor(ms / 1000);
@@ -33,6 +34,8 @@ export default function Stopwatch() {
     const [elapsed, setElapsed] = useState(0);
     const [isRunning, setIsRunning] = useState(false);
     const [startTimestamp, setStartTimestamp] = useState<number | null>(null);
+    // When the session first started. startTimestamp moves on every resume, so it can't be the session's start.
+    const [sessionStart, setSessionStart] = useState<number | null>(null);
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const [stateLoaded, setStateLoaded] = useState(false);
     const [noteModalVisible, setNoteModalVisible] = useState(false);
@@ -41,8 +44,8 @@ export default function Stopwatch() {
 
     const selectedYear = useContext(YearContext);
     const user = useContext(UserContext);
-    // Each profile has its own timer (the logged-in user keeps the original key)
-    const STORAGE_KEY = !user || user.isSelf ? LEGACY_STORAGE_KEY : `${LEGACY_STORAGE_KEY}_${user.id}`;
+    // Each profile has its own timer, keyed by profile id so another login on this device never sees it
+    const STORAGE_KEY = `${STORAGE_PREFIX}_${user?.id ?? ''}`;
     const { refreshSessions } = useContext(SessionsContext);
     const { user: authUser } = useAuth(); // offline sessions queue under the logged-in account
     const { profiles, setActive } = useFamily();
@@ -58,10 +61,11 @@ export default function Stopwatch() {
             try {
                 const json = await AsyncStorage.getItem(STORAGE_KEY);
                 if (json) {
-                    const { elapsed, isRunning, startTimestamp } = JSON.parse(json);
+                    const { elapsed, isRunning, startTimestamp, sessionStart } = JSON.parse(json);
                     setElapsed(elapsed ?? 0);
                     setIsRunning(isRunning ?? false);
                     setStartTimestamp(startTimestamp ?? null);
+                    setSessionStart(sessionStart ?? null);
                 }
             } catch (e) {
                 console.error('Error loading stopwatch state', e);
@@ -114,10 +118,10 @@ export default function Stopwatch() {
         if (!stateLoaded) return; // don't overwrite saved state with defaults before it has loaded
         AsyncStorage.setItem(
             STORAGE_KEY,
-            JSON.stringify({ elapsed, isRunning, startTimestamp })
+            JSON.stringify({ elapsed, isRunning, startTimestamp, sessionStart })
         ).catch((e) => console.error('Error saving stopwatch state', e));
     // While running, elapsed is derived from startTimestamp, so the 1s tick needn't be written to storage
-    }, [stateLoaded, persistedElapsed, isRunning, startTimestamp]);
+    }, [stateLoaded, persistedElapsed, isRunning, startTimestamp, sessionStart]);
 
     // ✅ Stopwatch timer effect
     useEffect(() => {
@@ -165,6 +169,7 @@ export default function Stopwatch() {
             // sent while the dialog is up is dropped.
             requestNotificationPermission().then(() => setNotifRefresh((n) => n + 1));
             setStartTimestamp(Date.now() - elapsed);
+            setSessionStart((s) => s ?? startTimestamp ?? Date.now());
             setIsRunning(true);
         }
     };
@@ -181,6 +186,7 @@ export default function Stopwatch() {
                         setIsRunning(false);
                         setElapsed(0);
                         setStartTimestamp(null);
+                        setSessionStart(null);
                     }
                 }
             ]
@@ -223,8 +229,7 @@ export default function Stopwatch() {
         if (native && native.key !== STORAGE_KEY) {
             // The notification belongs to another profile's timer: switch to it. This screen remounts for
             // that profile and, since the action param is still set, finishes the submit there.
-            const ownerId = native.key.replace(`${LEGACY_STORAGE_KEY}_`, '');
-            const target = native.key === LEGACY_STORAGE_KEY ? authUser?.id : ownerId;
+            const target = native.key.replace(`${STORAGE_PREFIX}_`, '');
             if (target && profiles.some((p) => p.id === target)) { handledAction.current = true; setActive(target); return; }
             handledAction.current = true;
             router.setParams({ action: '' });
@@ -253,7 +258,8 @@ export default function Stopwatch() {
     const handleFinalSubmit = async (noteText: string, length: number = elapsed) => {
         if (!selectedYear || !user) return;
         // Save session start time as local time string (YYYY-MM-DD HH:mm:ss)
-        const sessionStartTime = startTimestamp ? toLocalTimestamp(new Date(startTimestamp)) : '';
+        const startedAt = sessionStart ?? startTimestamp;
+        const sessionStartTime = startedAt ? toLocalTimestamp(new Date(startedAt)) : '';
         if (!sessionStartTime) {
             showAlert('Error', 'Session start time is missing. Please start and stop the stopwatch before submitting.');
             return;
@@ -270,9 +276,10 @@ export default function Stopwatch() {
             setIsRunning(false);
             setElapsed(0);
             setStartTimestamp(null);
+            setSessionStart(null);
             setNoteModalVisible(false);
             if (outcome === 'queued') {
-                const body = `${Math.floor(length / 60000)} min saved on this device. Connect to the internet and open the app to post the session.`;
+                const body = `${msToMinutes(length)} saved on this device. Connect to the internet and open the app to post the session.`;
                 postMessage('Session saved locally', body);
                 showAlert('Session saved locally', body);
                 return;
@@ -280,7 +287,7 @@ export default function Stopwatch() {
             // Refresh shared sessions context so other tabs update immediately
             await refreshSessions();
             router.replace('/obligation');
-            showAlert('Session saved', `${Math.floor(length / 60000)} min logged.`);
+            showAlert('Session saved', `${msToMinutes(length)} logged.`);
         } catch (error: Error | any) {
             setNoteModalVisible(false);
             showAlert('Couldn’t save session', error?.message ?? 'Please try again.');
@@ -304,7 +311,7 @@ export default function Stopwatch() {
             <View style={styles.buttonRow}>
                 <TouchableOpacity
                     activeOpacity={0.7}
-                    style={[styles.buttonRetro, styles.playButton]}
+                    style={styles.buttonRetro}
                     onPress={handlePlayPause}
                 >
                     <MaterialCommunityIcons
@@ -317,7 +324,7 @@ export default function Stopwatch() {
 
                 <TouchableOpacity
                     activeOpacity={0.7}
-                    style={[styles.buttonRetro, styles.resetButton]}
+                    style={styles.buttonRetro}
                     onPress={handleReset}
                 >
                     <MaterialCommunityIcons
@@ -377,9 +384,9 @@ const styles = StyleSheet.create({
     },
     oldSchoolTime: {
         fontSize: 84,
-        color: '#D32F2F',
+        color: colors.bad,
         letterSpacing: 4,
-        textShadowColor: 'rgba(211,47,47,0.25)',
+        textShadowColor: 'rgba(198,40,40,0.25)',
         textShadowRadius: 12,
         paddingHorizontal: 16,
         paddingVertical: 0,
@@ -408,15 +415,7 @@ const styles = StyleSheet.create({
         height: 60,
         boxShadow: '0 6px 14px rgba(28,25,23,0.28)',
     },
-    playButton: {},
-    resetButton: {},
     submitButton: { paddingHorizontal: 22 },
-    buttonTextRetro: {
-        color: '#ffffff',
-        letterSpacing: 2,
-        fontSize: 30,
-        textAlign: 'center',
-    },
     // Regular app font (the clock typeface is only for the time and the status)
     submitText: {
         color: '#ffffff',

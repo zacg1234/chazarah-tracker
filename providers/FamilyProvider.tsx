@@ -27,10 +27,11 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setActiveId(null);
       return;
     }
-    const list = await getFamilyProfiles(user);
+    const [list, saved] = await Promise.all([
+      getFamilyProfiles(user),
+      AsyncStorage.getItem(storageKey(user.id)).catch(() => null),
+    ]);
     setProfiles(list);
-    let saved: string | null = null;
-    try { saved = await AsyncStorage.getItem(storageKey(user.id)); } catch { /* use default */ }
     setActiveId((current) => {
       const wanted = current ?? saved;
       return list.some((p) => p.id === wanted) ? wanted : user.id;

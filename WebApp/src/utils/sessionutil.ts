@@ -2,6 +2,7 @@ import { supabase } from '@/services/supabaseClient';
 import type { Session } from '@/types/session';
 import type { Year } from '@/types/year';
 import { endOfDay, parseLocal } from './dateutil';
+import { getYearFirstDay } from './yearutils';
 
 // CREATE
 export async function createSession(session: Omit<Session, 'SessionId'>, year: Year) {
@@ -16,17 +17,6 @@ export async function createSession(session: Omit<Session, 'SessionId'>, year: Y
   }
 }
 
-// READ (by SessionId)
-export async function getSessionById(SessionId: number) {
-  const { data, error } = await supabase
-    .from('TblSession')
-    .select('*')
-    .eq('SessionId', SessionId)
-    .single();
-  if (error) throw error;
-  return data as Session;
-}
-
 // READ (all for user and year)
 export async function getSessionsByUserAndYear(UserId: string, YearId: number) {
   const { data, error } = await supabase
@@ -34,20 +24,6 @@ export async function getSessionsByUserAndYear(UserId: string, YearId: number) {
     .select('*')
     .eq('UserId', UserId)
     .eq('YearId', YearId)
-    .order('SessionStartTime', { ascending: true });
-  if (error) throw error;
-  return data as Session[];
-}
-
-// READ (sessions for user between dates)
-export async function getSessionsByUserBetweenDates(UserId: string, startDate: string, endDate: string) {
-  const endDateTime = endDate.length === 10 ? `${endDate} 23:59:59` : endDate;
-  const { data, error } = await supabase
-    .from('TblSession')
-    .select('*')
-    .eq('UserId', UserId)
-    .gte('SessionStartTime', startDate)
-    .lte('SessionStartTime', endDateTime)
     .order('SessionStartTime', { ascending: true });
   if (error) throw error;
   return data as Session[];
@@ -109,7 +85,7 @@ export const validateSessionData = (session: Partial<Session>, year: Year) => {
     if (isNaN(start.getTime())) errorMsg = 'Session start time is invalid.';
     else {
       const now = new Date();
-      const yearStart = parseLocal(year.StartDate);
+      const yearStart = getYearFirstDay(year); // sessions on StartDate itself fall in no quarter
       const yearEnd = endOfDay(parseLocal(year.EndDate)); // the whole last day counts
       if (isNaN(yearStart.getTime()) || isNaN(yearEnd.getTime())) errorMsg = 'Year start/end date is invalid.';
       else if (start > now) {

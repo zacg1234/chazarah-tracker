@@ -3,7 +3,7 @@ import Button from '@/components/Button';
 import Popup from '@/components/Popup';
 import { colors, radii } from '@/constants/theme';
 import { showAlert } from '@/components/Dialog';
-import { toLocalTimestamp } from '@/utils/dateutil';
+import { parseLocal, toLocalTimestamp } from '@/utils/dateutil';
 import { createSession, updateSession } from '@/utils/sessionutil';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router } from 'expo-router';
@@ -45,15 +45,8 @@ export default function ManualSessionEntry({
   useEffect(() => {
     if (visible) {
       if (mode === 'edit' && initialSession) {
-        // Parse local timestamp string to Date
-        const [datePart, timePart] = (initialSession.SessionStartTime || '').split(/[ T]/);
-        let d = new Date();
-        if (datePart && timePart) {
-          const [year, month, day] = datePart.split('-').map(Number);
-          const [hour, minute, second] = timePart.split(':').map(Number);
-          d = new Date(year, month - 1, day, hour, minute, second || 0);
-        }
-        setDate(d);
+        const parsed = initialSession.SessionStartTime ? parseLocal(initialSession.SessionStartTime) : null;
+        setDate(parsed && !isNaN(parsed.getTime()) ? parsed : new Date());
         setSessionLength(Math.round(initialSession.SessionLength / 60000).toString());
         setNote(initialSession.SessionNote || '');
       } else {

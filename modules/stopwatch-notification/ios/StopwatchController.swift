@@ -42,7 +42,16 @@ public enum StopwatchController {
             "elapsed": s.currentElapsed(), "updatedAt": s.updatedAt]
   }
 
-  static func render(_ s: Saved) async {
+  // Renders run one at a time: two overlapping syncs could otherwise both find no activity and both start one
+  @MainActor private static var renderChain: Task<Void, Never>?
+  @MainActor static func render(_ s: Saved) async {
+    let previous = renderChain
+    let task = Task { await previous?.value; await performRender(s) }
+    renderChain = task
+    await task.value
+  }
+
+  private static func performRender(_ s: Saved) async {
     let state = StopwatchAttributes.ContentState(
       isRunning: s.isRunning,
       startTimestamp: Date(timeIntervalSince1970: s.startTimestamp / 1000),

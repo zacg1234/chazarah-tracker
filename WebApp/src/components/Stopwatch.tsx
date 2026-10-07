@@ -4,8 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAppData } from '@/providers';
 import ConfirmDialog from './ConfirmDialog';
 import { createSession } from '@/utils/sessionutil';
+import { toLocalTimestamp } from '@/utils/dateutil';
 
-const LEGACY_STORAGE_KEY = 'chazarah_stopwatch';
+const STORAGE_PREFIX = 'chazarah_stopwatch';
 const pad = (n: number) => n.toString().padStart(2, '0');
 
 function formatTime(ms: number) {
@@ -23,12 +24,14 @@ function loadSaved(storageKey: string) {
 
 export default function Stopwatch() {
   const { selectedYear, refreshSessions, activeProfile } = useAppData();
-  // Each profile has its own timer (the logged-in user keeps the original key)
-  const STORAGE_KEY = !activeProfile || activeProfile.isSelf ? LEGACY_STORAGE_KEY : `${LEGACY_STORAGE_KEY}_${activeProfile.id}`;
+  // Each profile has its own timer, keyed by profile id so another login in this browser never sees it
+  const STORAGE_KEY = `${STORAGE_PREFIX}_${activeProfile?.id ?? ''}`;
   const saved = useRef(loadSaved(STORAGE_KEY)).current;
   const [elapsed, setElapsed] = useState<number>(saved.elapsed ?? 0);
   const [isRunning, setIsRunning] = useState<boolean>(saved.isRunning ?? false);
   const [startTimestamp, setStartTimestamp] = useState<number | null>(saved.startTimestamp ?? null);
+  // When the session first started. startTimestamp moves on every resume, so it can't be the session's start.
+  const [sessionStart, setSessionStart] = useState<number | null>(saved.sessionStart ?? null);
   const [noteOpen, setNoteOpen] = useState(false);
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
@@ -37,8 +40,8 @@ export default function Stopwatch() {
 
   // Persist so the timer survives reloads (like AsyncStorage on mobile)
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ elapsed, isRunning, startTimestamp })); } catch { /* ignore */ }
-  }, [STORAGE_KEY, elapsed, isRunning, startTimestamp]);
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ elapsed, isRunning, startTimestamp, sessionStart })); } catch { /* ignore */ }
+  }, [STORAGE_KEY, elapsed, isRunning, startTimestamp, sessionStart]);
 
   // Tick; derive from the wall clock so background tabs stay accurate
   useEffect(() => {
@@ -52,20 +55,28 @@ export default function Stopwatch() {
     if (isRunning) setIsRunning(false);
     else {
       setStartTimestamp(Date.now() - elapsed);
+      setSessionStart((s) => s ?? startTimestamp ?? Date.now());
       setIsRunning(true);
     }
   };
 
   const reset = () => {
     setConfirmReset(false);
-    setIsRunning(false); setElapsed(0); setStartTimestamp(null);
+    setIsRunning(false); setElapsed(0); setStartTimestamp(null); setSessionStart(null);
   };
 
   const submit = () => {
-    setIsRunning(false);
     setError('');
+    // The tick can be up to 500ms behind the clock, so measure the final length now
+    const length = isRunning && startTimestamp ? Date.now() - startTimestamp : elapsed;
+    if (length < 1000) {
+      setError('Start the timer first, then tap Submit.');
+      return;
+    }
+    setElapsed(length);
+    setIsRunning(false);
     if (getSkipNote()) {
-      finalSubmit('');
+      finalSubmit('', length);
       return;
     }
     setNote('');
@@ -78,18 +89,18 @@ export default function Stopwatch() {
     finalSubmit('');
   };
 
-  const finalSubmit = async (noteText: string) => {
-    if (!selectedYear || !activeProfile || !startTimestamp) {
+  const finalSubmit = async (noteText: string, length: number = elapsed) => {
+    const startedAt = sessionStart ?? startTimestamp;
+    if (!selectedYear || !activeProfile || !startedAt) {
       setError('Session start time is missing. Please start the stopwatch before submitting.');
       return;
     }
-    const d = new Date(startTimestamp);
-    const SessionStartTime = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    const SessionStartTime = toLocalTimestamp(new Date(startedAt));
     try {
-      await createSession({ UserId: activeProfile.id, YearId: selectedYear.JewishYear, SessionLength: elapsed, SessionNote: noteText, SessionStartTime }, selectedYear);
+      await createSession({ UserId: activeProfile.id, YearId: selectedYear.JewishYear, SessionLength: length, SessionNote: noteText, SessionStartTime }, selectedYear);
       await refreshSessions();
       setNoteOpen(false);
-      setElapsed(0); setStartTimestamp(null);
+      setElapsed(0); setStartTimestamp(null); setSessionStart(null);
       navigate('/obligation');
     } catch (err: any) {
       setError(err.message);

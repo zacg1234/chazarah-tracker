@@ -4,7 +4,7 @@ import { impact } from '@/utils/haptics';
 import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 
-type Variant = 'primary' | 'tonal' | 'tonalDestructive' | 'secondary' | 'destructive' | 'soft' | 'ghost' | 'ghostDestructive';
+type Variant = 'primary' | 'tonal' | 'destructive' | 'soft' | 'ghost' | 'ghostDestructive';
 type Props = {
   title: string;
   onPress?: () => void;
@@ -19,9 +19,7 @@ const palette: Record<Variant, { bg: string; fg: string; border?: string; shadow
   primary: { bg: colors.primary, fg: '#fff', shadow: '0 4px 12px rgba(37,99,235,0.22)' },
   // Same look as IconButton: soft tinted fill + thin border
   tonal: { bg: colors.primarySoft, fg: colors.primary, border: '#bfd0fb' },
-  tonalDestructive: { bg: colors.badSoft, fg: colors.bad, border: '#f5c2c2' },
   destructive: { bg: colors.bad, fg: '#fff', shadow: '0 4px 12px rgba(198,40,40,0.2)' },
-  secondary: { bg: colors.primarySoft, fg: colors.primary, border: '#bfd0fb' }, // same as tonal
   soft: { bg: colors.soft, fg: colors.ink, border: colors.line },
   ghost: { bg: 'transparent', fg: colors.primary },
   ghostDestructive: { bg: 'transparent', fg: colors.bad },

@@ -5,7 +5,6 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 
 export type AuthContextType = {
   user: User | null;
-  session: Session | null;
   loading: boolean;
   recovery: boolean; // true while the user is resetting their password from an emailed link
   recoveryError: string | null; // set when the reset link was invalid or expired
@@ -13,7 +12,7 @@ export type AuthContextType = {
 };
 
 const AuthContext = createContext<AuthContextType>({
-  user: null, session: null, loading: true, recovery: false, recoveryError: null, endRecovery: async () => { },
+  user: null, loading: true, recovery: false, recoveryError: null, endRecovery: async () => { },
 });
 
 // Password-reset emails redirect to chazarahtracker://reset-password#access_token=...&refresh_token=...&type=recovery
@@ -33,7 +32,6 @@ function parseRecoveryUrl(url: string | null) {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [recovery, setRecovery] = useState(false);
   const [recoveryError, setRecoveryError] = useState<string | null>(null);
@@ -51,7 +49,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         if (!mounted) return;
         setSession(error ? null : data.session ?? null);
-        setUser(error ? null : data.session?.user ?? null);
       } catch (e) {
         console.error('Failed to restore session', e);
       } finally {
@@ -61,7 +58,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, newSession) => {
       setSession(newSession);
-      setUser(newSession?.user ?? null);
       if (event === 'SIGNED_OUT') setRecovery(false);
     });
 
@@ -96,6 +92,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // Leave recovery mode by signing out, so the user logs in fresh with the new password
+  const user = session?.user ?? null;
+
   const endRecovery = async () => {
     await supabase.auth.signOut().catch(() => { });
     setRecovery(false);
@@ -103,7 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, recovery, recoveryError, endRecovery }}>
+    <AuthContext.Provider value={{ user, loading, recovery, recoveryError, endRecovery }}>
       {children}
     </AuthContext.Provider>
   );

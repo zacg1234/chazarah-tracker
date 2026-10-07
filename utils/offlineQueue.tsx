@@ -8,7 +8,6 @@ export type NewSession = Omit<Session, 'SessionId'>;
 type QueuedSession = { localId: string; session: NewSession };
 
 const queueKey = (ownerId: string) => `offline_sessions_${ownerId}`;
-const YEARS_KEY = 'cached_years';
 
 // ---- classifying errors ----
 // Postgres/PostgREST errors carry a `code`; a failed fetch (no connection, timeout) does not.
@@ -28,7 +27,7 @@ function isRetryable(error: any, status = 0): boolean {
 
 // A stalled connection must not hold the queue forever
 const REQUEST_TIMEOUT_MS = 15000;
-function withTimeout<T>(promise: PromiseLike<T>): Promise<T> {
+export function withTimeout<T>(promise: PromiseLike<T>): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error('Network request timed out')), REQUEST_TIMEOUT_MS);
     promise.then((v) => { clearTimeout(timer); resolve(v); }, (e) => { clearTimeout(timer); reject(e); });

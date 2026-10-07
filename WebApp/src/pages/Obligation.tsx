@@ -21,9 +21,9 @@ export default function Obligation() {
       {!isMobile && <h1 className="page-title">Obligation</h1>}
       <div className="stats">
         <div className={`stat big ${ok ? 'good' : 'bad'}`}>
-          <span className="stat-label">Minutes owed (current quarter)</span>
-          <span className="stat-value">{ok ? 0 : owedNow}</span>
-          <span className="stat-note">{ok ? 'You’re all caught up 🎉' : 'Keep going!'}</span>
+          <span className="stat-label">{ok && owedNow < 0 ? 'Minutes ahead' : 'Minutes owed'} (current quarter)</span>
+          <span className="stat-value">{ok ? Math.max(-owedNow, 0) : owedNow}</span>
+          <span className="stat-note">{!ok ? 'Keep going!' : owedNow < 0 ? 'You’re ahead of your obligation 🎉' : 'You’re all caught up 🎉'}</span>
         </div>
         <div className="stat">
           <span className="stat-label">Weekly obligation</span>

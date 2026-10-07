@@ -35,8 +35,8 @@ export default function Chazarah() {
         <aside className="side">
           {current && !loading && (
             <div className={`stat ${owedNow <= 0 ? 'good' : 'bad'}`}>
-              <span className="stat-label">Owed this quarter</span>
-              <span className="stat-value">{Math.max(owedNow, 0)} <small>min</small></span>
+              <span className="stat-label">{owedNow < 0 ? 'Ahead this quarter' : 'Owed this quarter'}</span>
+              <span className="stat-value">{Math.abs(owedNow)} <small>min</small></span>
             </div>
           )}
           <section className="card">

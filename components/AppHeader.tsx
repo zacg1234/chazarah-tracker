@@ -1,3 +1,4 @@
+import IconButton from '@/components/IconButton';
 import { Text } from '@/components/Text';
 import { showAlert } from '@/components/Dialog';
 import { colors, radii, space } from '@/constants/theme';
@@ -57,8 +58,8 @@ export default function AppHeader({ years, selectedYear, onSelectYear, loading }
         )}
 
         <View style={styles.actions}>
-          <IconButton name="stats-chart-outline" label="Open progress chart in browser" onPress={() => Linking.openURL(CHART_URL).catch(() => showAlert('Error', 'Could not open the chart.'))} />
-          <IconButton name="person-outline" label="Profile" onPress={() => router.push('/modal/profile')} />
+          <IconButton size={36} icon="stats-chart-outline" label="Open progress chart in browser" onPress={() => Linking.openURL(CHART_URL).catch(() => showAlert('Error', 'Could not open the chart.'))} />
+          <IconButton size={36} icon="person-outline" label="Profile" onPress={() => router.push('/modal/profile')} />
         </View>
       </View>
 
@@ -79,15 +80,6 @@ export default function AppHeader({ years, selectedYear, onSelectYear, loading }
         </Pressable>
       </BottomSheet>
     </>
-  );
-}
-
-function IconButton({ name, label, onPress, size = 22 }: { name: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void; size?: number }) {
-  return (
-    <Pressable onPress={onPress} accessibilityLabel={label} hitSlop={6}
-      style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.8, transform: [{ scale: 0.95 }] }]}>
-      <Ionicons name={name} size={size} color={colors.primary} />
-    </Pressable>
   );
 }
 
@@ -136,7 +128,6 @@ const styles = StyleSheet.create({
   profileChipOther: { backgroundColor: colors.warnSoft, borderColor: colors.warnLine },
   profileText: { flexShrink: 1, fontSize: 14, fontWeight: '600', color: colors.muted },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  iconBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primarySoft, borderWidth: 1.5, borderColor: '#bfd0fb' },
   overlay: { flex: 1, backgroundColor: colors.scrim, justifyContent: 'flex-end' },
   sheet: { backgroundColor: colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: space.lg, paddingTop: space.sm },
   grabber: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.inputBorder, marginBottom: space.md },

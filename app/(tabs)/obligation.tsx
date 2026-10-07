@@ -1,8 +1,8 @@
 import { colors, radii, softShadow, space } from '@/constants/theme';
 import { formatDateMDY } from '@/utils/dateutil';
-import { getUserQuarters } from '@/utils/obligationutil';
+import { getObligationData, getUserQuarters, type ObligationData } from '@/utils/obligationutil';
 import { useFocusEffect } from '@react-navigation/native';
-import React, { useCallback, useContext, useState } from 'react';
+import React, { useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/Text';
 import { SessionsContext, UserContext, YearContext } from './_layout';
@@ -11,35 +11,44 @@ export default function ObligationScreen() {
   const user = useContext(UserContext);
   const year = useContext(YearContext);
   const { sessions, refreshSessions } = useContext(SessionsContext);
-  const [quarters, setQuarters] = useState<any[]>([]);
+  const [data, setData] = useState<ObligationData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const loadedFor = useRef('');
+  const [reloadTick, setReloadTick] = useState(0); // pull-to-refresh also refetches payments
 
+  // Obligation and payments are refetched on focus (payments can change elsewhere), but not when only the
+  // sessions change: the totals are recomputed from them below
   useFocusEffect(
     useCallback(() => {
       let active = true;
+      const key = `${user?.id}:${year?.JewishYear}`;
       (async () => {
-        setLoading(true);
+        if (loadedFor.current !== key) setLoading(true); // no loader flash when just coming back to the tab
         try {
-          const result = user?.id && year ? await getUserQuarters(user.id, year, sessions) : [];
-          if (active) setQuarters(result);
+          const result = user?.id && year ? await getObligationData(user.id, year) : null;
+          if (active) { setData(result); loadedFor.current = key; }
         } catch (e) {
           console.error('Failed to load obligation', e);
-          if (active) setQuarters([]);
+          if (active) setData(null);
         }
         if (active) setLoading(false);
       })();
       return () => { active = false; };
-    }, [user, year, sessions])
+    }, [user, year, reloadTick])
   );
+
+  const quarters = useMemo(() => getUserQuarters(data, sessions), [data, sessions]);
 
   const onRefresh = async () => {
     setRefreshing(true);
+    setReloadTick((n) => n + 1);
     try { await refreshSessions(); } finally { setRefreshing(false); }
   };
 
   // Current quarter = the last one that has started
-  const current = quarters.slice().reverse().find((q) => q.IsActive);
+  const started = quarters.filter((q) => q.IsActive);
+  const current = started[started.length - 1];
   const owedNow = current ? Math.ceil(current.MinutesOwed - current.MinutesChazered) : 0;
   const caughtUp = owedNow <= 0;
   const ahead = Math.max(-owedNow, 0); // surplus minutes beyond what's owed so far
@@ -68,7 +77,7 @@ export default function ObligationScreen() {
             </View>
           </View>
 
-          {quarters.filter((q) => q.IsActive).map((q) => {
+          {started.map((q) => {
             const pct = q.MinutesOwed > 0 ? Math.min(100, (q.MinutesChazered / q.MinutesOwed) * 100) : 100;
             const finalTone = q.FinalAmountOwed > 0 ? colors.bad : colors.good;
             return (

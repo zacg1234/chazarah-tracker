@@ -46,7 +46,7 @@ const RotatedTick = ({ x, y, payload }: any) => (
   </text>
 );
 
-export default function ChartPage() {
+export default function ChartPage({ standalone = false }: { standalone?: boolean }) {
   const [state, setState] = useState<{ year: number; rows: Row[] } | null>(null);
   const [error, setError] = useState('');
   const cardRef = useRef<HTMLDivElement>(null);
@@ -73,7 +73,7 @@ export default function ChartPage() {
   }, []);
 
   return (
-    <div className="chart-page">
+    <div className={standalone ? 'chart-page standalone' : 'chart-page'}>
       <div className="chart-card" ref={cardRef} style={{ fontFamily: FONT }}>
         <h1 className="chart-title">Kollel Ateres Ami &nbsp;| {state?.year || ''} Chazarah Progress</h1>
         {error && <p className="msg error">Could not load chart data: {error}</p>}

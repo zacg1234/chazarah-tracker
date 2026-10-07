@@ -42,7 +42,7 @@ export function WebLayout() {
             {NAV.map((n) => (
               <NavLink key={n.to} to={n.to}>{n.label}</NavLink>
             ))}
-            <NavLink to="/chart">Chart</NavLink>
+            <NavLink to="/progress">Chart</NavLink>
           </nav>
 
           <div className="header-right">

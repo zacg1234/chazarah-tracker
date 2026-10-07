@@ -10,7 +10,7 @@ import { getSessionsByUserAndYear } from '@/utils/sessionutil';
 import { fetchYears, getCurrentYear } from '@/utils/yearutils';
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import { createContext, useCallback, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -18,7 +18,7 @@ export const YearContext = createContext<Year | null>(null);
 export const UserContext = createContext<any>(null);
 // False until the years and the active profile have loaded (screens show a loader instead of guessing)
 export const ReadyContext = createContext(false);
-export const SessionsContext = createContext<{ sessions: any[]; loading: boolean; refreshSessions: () => Promise<void>; }>({ sessions: [], loading: false, refreshSessions: async () => { } });
+export const SessionsContext = createContext<{ sessions: any[]; refreshSessions: () => Promise<void>; }>({ sessions: [], refreshSessions: async () => { } });
 
 
 export default function TabsLayout() {
@@ -26,8 +26,6 @@ export default function TabsLayout() {
   const [selectedYear, setSelectedYear] = useState<Year | null>(null);
   const [loading, setLoading] = useState(true);
   const [sessions, setSessions] = useState<any[]>([]);
-  const [sessionsLoading, setSessionsLoading] = useState(false);
-  //const [showPicker, setShowPicker] = useState(false);
   const { active: user } = useFamily(); // whoever is being viewed/entered for
   const insets = useSafeAreaInsets();
   const { user: authUser } = useAuth(); // the logged-in account (sub-profiles queue under it)
@@ -50,17 +48,17 @@ export default function TabsLayout() {
     fetchData();
   }, []);
 
+  // Only the latest request may write: a slow response for a previous profile/year must not overwrite newer data
+  const latestRequest = useRef(0);
   const refreshSessions = useCallback(async () => {
+    const requestId = ++latestRequest.current;
     if (user?.id && selectedYear?.JewishYear) {
-      setSessionsLoading(true);
       try {
         const data = await getSessionsByUserAndYear(user.id, selectedYear.JewishYear);
-        setSessions(data || []);
+        if (requestId === latestRequest.current) setSessions(data || []);
       } catch (e) {
         console.error('Failed to load sessions', e);
-        showAlert('Error', 'Failed to load sessions.');
-      } finally {
-        setSessionsLoading(false);
+        if (requestId === latestRequest.current) showAlert('Error', 'Failed to load sessions.');
       }
     } else {
       setSessions([]);
@@ -74,7 +72,7 @@ export default function TabsLayout() {
 
   useOfflineSync(authUser?.id, refreshSessions);
 
-  const sessionsCtxValue = useMemo(() => ({ sessions, loading: sessionsLoading, refreshSessions }), [sessions, sessionsLoading, refreshSessions]);
+  const sessionsCtxValue = useMemo(() => ({ sessions, refreshSessions }), [sessions, refreshSessions]);
 
   return (
     <ReadyContext.Provider value={!loading && !!user}>

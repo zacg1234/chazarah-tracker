@@ -2,7 +2,7 @@
   "expo": {
     "name": "Chazarah Tracker",
     "slug": "Chazarah Tracker",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "orientation": "portrait",
     "icon": "./assets/images/Chazarah_Tracker_Logo_Simple.png",
     "scheme": "chazarahtracker",

@@ -1,29 +1,32 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAppData } from '@/providers';
-import { getUserQuarters } from '@/utils/obligationutil';
+import { getObligationData, getUserQuarters, type ObligationData } from '@/utils/obligationutil';
 
 // Quarter breakdown for the logged-in user and selected year
 export function useQuarters() {
   const { selectedYear, sessions, activeProfile } = useAppData();
-  const [quarters, setQuarters] = useState<any[]>([]);
+  const [data, setData] = useState<ObligationData | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Obligation and payments only change with the profile/year; session changes just recompute the totals below
   useEffect(() => {
     let active = true;
     (async () => {
       setLoading(true);
       try {
-        const q = activeProfile?.id && selectedYear ? await getUserQuarters(activeProfile.id, selectedYear, sessions) : [];
-        if (active) setQuarters(q);
+        const result = activeProfile?.id && selectedYear ? await getObligationData(activeProfile.id, selectedYear) : null;
+        if (active) setData(result);
       } catch {
-        if (active) setQuarters([]);
+        if (active) setData(null);
       }
       if (active) setLoading(false);
     })();
     return () => { active = false; };
-  }, [activeProfile?.id, selectedYear, sessions]);
+  }, [activeProfile?.id, selectedYear]);
 
-  const current = quarters.slice().reverse().find((q) => q.IsActive);
+  const quarters = useMemo(() => getUserQuarters(data, sessions), [data, sessions]);
+  const started = quarters.filter((q) => q.IsActive);
+  const current = started[started.length - 1];
   const owedNow = current ? Math.ceil(current.MinutesOwed - current.MinutesChazered) : 0;
   return { quarters, loading, current, owedNow };
 }

@@ -28,14 +28,20 @@ export const getCurrentYear = (years: Year[]) => {
 
 export const isCurrentYear = (year: Year | null) => !!year && isDateInYear(year, new Date());
 
+// The year's first counted day is the day after StartDate (quarters and session validation both use this)
+export function getYearFirstDay(year: Year): Date {
+  const d = parseLocal(year.StartDate);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 1);
+  return d;
+}
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 // Returns the quarters with their start and end dates along with quarter index.
 // The year starts the day after StartDate; leftover days go to the last quarter.
 export function getQuartersForYear(year: Year): [string, string, number][] {
-  const startDay = parseLocal(year.StartDate);
-  startDay.setHours(0, 0, 0, 0);
-  startDay.setDate(startDay.getDate() + 1);
+  const startDay = getYearFirstDay(year);
   const endDay = parseLocal(year.EndDate);
   endDay.setHours(0, 0, 0, 0);
   if (isNaN(startDay.getTime()) || isNaN(endDay.getTime()) || endDay <= startDay) return [];

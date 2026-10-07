@@ -6,6 +6,7 @@ import { isCurrentYear } from '@/utils/yearutils';
 import { useContext, useState } from 'react';
 import { View } from 'react-native';
 import Button from '@/components/Button';
+import { colors } from '@/constants/theme';
 import { Text } from '@/components/Text';
 import { ReadyContext, SessionsContext, UserContext, YearContext } from './_layout';
 
@@ -39,7 +40,7 @@ export default function ChazarahScreen() {
                     />
                 </>
             ) : (
-                <Text style={{ fontSize: 22, color: '#D32F2F', textAlign: 'center' }}>
+                <Text style={{ fontSize: 22, color: colors.bad, textAlign: 'center' }}>
                     Stopwatch is only available for the current year.
                 </Text>
             )}

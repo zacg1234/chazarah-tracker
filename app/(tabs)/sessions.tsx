@@ -5,6 +5,7 @@ import { deleteSession } from '@/utils/sessionutil';
 import { msToMinutes, to12HourTime } from '@/utils/timeutil';
 import { isCurrentYear } from '@/utils/yearutils';
 import * as Haptics from 'expo-haptics';
+import { impact } from '@/utils/haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Dimensions, LayoutChangeEvent, Platform, StyleSheet, View } from 'react-native';
@@ -105,7 +106,7 @@ export default function SessionsScreen() {
 
   useEffect(() => {
     if (selectedIndex !== null && sessions.length > 0) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid).catch(() => { });
+      impact(Haptics.ImpactFeedbackStyle.Rigid);
     }
   }, [selectedIndex, sessions.length]);
 
@@ -324,8 +325,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: ITEM_HEIGHT * 1.25,
-    //backgroundColor: '#e2e8f0',
-    //opacity: 0.9,
     zIndex: 2,
   },
   fadeTop: { top: 0 },

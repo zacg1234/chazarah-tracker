@@ -1,4 +1,4 @@
-import type { Session, User } from '@supabase/supabase-js';
+import type { User } from '@supabase/supabase-js';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/services/supabaseClient';
@@ -8,12 +8,12 @@ import { fetchYears, getCurrentYear } from '@/utils/yearutils';
 import { getFamilyProfiles, type Profile } from '@/utils/profileutil';
 
 // ---------- Auth ----------
-type AuthCtx = { user: User | null; session: Session | null; loading: boolean; recovery: boolean };
-const AuthContext = createContext<AuthCtx>({ user: null, session: null, loading: true, recovery: false });
+type AuthCtx = { user: User | null; loading: boolean; recovery: boolean };
+const AuthContext = createContext<AuthCtx>({ user: null, loading: true, recovery: false });
 export const useAuth = () => useContext(AuthContext);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [recovery, setRecovery] = useState(false);
   const navigate = useNavigate();
@@ -28,11 +28,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
-      setSession(data.session ?? null);
+      setUser(data.session?.user ?? null);
       setLoading(false);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, newSession) => {
-      setSession(newSession);
+      setUser(newSession?.user ?? null);
       if (event === 'PASSWORD_RECOVERY') {
         // Recovery link may land on any path; always send the user to the reset page
         setRecovery(true);
@@ -46,10 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const value = useMemo(
-    () => ({ user: session?.user ?? null, session, loading, recovery }),
-    [session, loading, recovery]
-  );
+  const value = useMemo(() => ({ user, loading, recovery }), [user, loading, recovery]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
@@ -120,13 +117,17 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
+  // Only the latest request may write: a slow response for a previous profile/year must not overwrite newer data
+  const latestRequest = useRef(0);
   const refreshSessions = useCallback(async () => {
+    const requestId = ++latestRequest.current;
     if (activeProfile?.id && selectedYear?.JewishYear) {
       setSessionsLoading(true);
       try {
-        setSessions((await getSessionsByUserAndYear(activeProfile.id, selectedYear.JewishYear)) || []);
+        const data = (await getSessionsByUserAndYear(activeProfile.id, selectedYear.JewishYear)) || [];
+        if (requestId === latestRequest.current) setSessions(data);
       } finally {
-        setSessionsLoading(false);
+        if (requestId === latestRequest.current) setSessionsLoading(false);
       }
     } else {
       setSessions([]);

@@ -3,25 +3,15 @@ import { deleteSubAccount, getFamilyProfiles } from './profileutil';
 
   // 🔹 Logout handler
 export async function handleLogout() {
-    try {
-        await supabase.auth.signOut();
-    } catch (error: Error | any) {
-        throw new Error(error.message);
-    }
+    await supabase.auth.signOut();
 }
 
 export async function handleLogin(email: string, password: string, setLoading?: (loading: boolean) => void) {
     setLoading?.(true);
 
     try {
-        const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
-
-        if (error) {
-            throw new Error(error.message);
-        }
-
-    } catch (error: Error | any) {
-        throw new Error(error.message);
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw new Error(error.message);
     } finally {
         setLoading?.(false);
     }
@@ -50,33 +40,28 @@ export async function handleSignUp(email: string, password: string, firstname: s
         throw new Error('Password must be at least 6 characters long.');
     }
 
-    try {
-        const { data, error } = await supabase.auth.signUp({
-            email: email.trim(),
-            password,
-                options: {
-                    data: {
-                        display_name: `${firstname.trim()} ${lastname.trim()}`,
-                        firstname: firstname.trim(),
-                        lastname: lastname.trim(),
-                    },
-                    emailRedirectTo: undefined, // disables email confirmation
-                }
-            });
+    const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+            data: {
+                display_name: `${firstname.trim()} ${lastname.trim()}`,
+                firstname: firstname.trim(),
+                lastname: lastname.trim(),
+            },
+            emailRedirectTo: undefined, // disables email confirmation
+        }
+    });
 
-            if (error) {
-                if (error.code === 'user_already_exists' || /already (been )?registered/i.test(error.message)) {
-                    throw new EmailAlreadyUsedError();
-                }
-                throw new Error(error.message);
-            }
-            // With email confirmation on, Supabase hides duplicates by returning a user with no identities
-            if (data.user && data.user.identities?.length === 0) {
-                throw new EmailAlreadyUsedError();
-            }
-    } catch (err: Error | any) {
-        if (err instanceof EmailAlreadyUsedError) throw err;
-        throw new Error(err.message);
+    if (error) {
+        if (error.code === 'user_already_exists' || /already (been )?registered/i.test(error.message)) {
+            throw new EmailAlreadyUsedError();
+        }
+        throw new Error(error.message);
+    }
+    // With email confirmation on, Supabase hides duplicates by returning a user with no identities
+    if (data.user && data.user.identities?.length === 0) {
+        throw new EmailAlreadyUsedError();
     }
 };
 
@@ -85,20 +70,26 @@ export async function deleteAccount() {
     if (userErr || !userResp.user) throw new Error('No logged in user.');
     const userId = userResp.user.id;
 
-    // Remove any sub-accounts (and their data) first
-    for (const profile of await getFamilyProfiles(userResp.user)) {
-        if (!profile.isSelf) await deleteSubAccount(profile.id);
-    }
+    // Every step is safe to repeat, so a failure partway just means "run it again". Say so instead of
+    // leaving the user with a bare error from whichever step happened to fail.
+    try {
+        // Remove any sub-accounts (and their data) first
+        for (const profile of await getFamilyProfiles(userResp.user)) {
+            if (!profile.isSelf) await deleteSubAccount(profile.id);
+        }
 
-    // Delete all user-scoped table records
-    for (const table of ['TblSession', 'TblObligation', 'TblPayment']) {
-        const { error } = await supabase.from(table).delete().eq('UserId', userId);
-        if (error) throw new Error(error.message);
-    }
+        // Delete all user-scoped table records
+        for (const table of ['TblSession', 'TblObligation', 'TblPayment']) {
+            const { error } = await supabase.from(table).delete().eq('UserId', userId);
+            if (error) throw new Error(error.message);
+        }
 
-    // Delete the auth user via a SECURITY DEFINER RPC (see CLAUDE.md for required SQL)
-    const { error: rpcError } = await supabase.rpc('delete_user');
-    if (rpcError) throw new Error(rpcError.message);
+        // Delete the auth user via a SECURITY DEFINER RPC (see CLAUDE.md for required SQL)
+        const { error: rpcError } = await supabase.rpc('delete_user');
+        if (rpcError) throw new Error(rpcError.message);
+    } catch (error: Error | any) {
+        throw new Error(`Your account was only partly deleted. Please try again. (${error.message})`);
+    }
 
     await supabase.auth.signOut();
 }
@@ -159,8 +150,6 @@ export async function updateLoggedInUserProfile(
         }
         
         return { success: true, user: updated?.user } as const;
-    } catch (error: Error | any) {
-        throw new Error(error.message);
     } finally {
         setLoading?.(false);
     }

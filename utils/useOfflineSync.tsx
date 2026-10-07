@@ -3,6 +3,7 @@ import { showAlert } from '@/components/Dialog';
 import { useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 import { flushQueue } from './offlineQueue';
+import { msToMinutes } from './timeutil';
 
 // Pushes sessions saved while offline to the database: on mount, whenever the app returns to the
 // foreground, and whenever the connection comes back.
@@ -12,17 +13,15 @@ export function useOfflineSync(ownerId: string | undefined, refreshSessions: () 
 
   useEffect(() => {
     if (!ownerId) return;
-    let cancelled = false;
-
     const sync = async () => {
       const { synced, dropped } = await flushQueue(ownerId);
-      if (cancelled) return;
+      // Report even if the effect was torn down meanwhile (the result goes only to this caller)
       if (synced > 0) {
         await refreshRef.current();
         showAlert('Sessions synced', synced === 1 ? '1 saved session was posted.' : `${synced} saved sessions were posted.`);
       }
       if (dropped.length > 0) {
-        showAlert('Some sessions could not be posted', dropped.map((d) => `${d.session.SessionStartTime}: ${d.reason}`).join('\n'));
+        showAlert('Some sessions could not be posted', dropped.map((d) => `${d.session.SessionStartTime} (${msToMinutes(d.session.SessionLength)}): ${d.reason}`).join('\n'));
       }
     };
     const safeSync = () => sync().catch((e) => console.error('Offline sync failed', e));
@@ -36,6 +35,6 @@ export function useOfflineSync(ownerId: string | undefined, refreshSessions: () 
       if (online && wasOnline === false) safeSync();
       wasOnline = online;
     });
-    return () => { cancelled = true; appSub.remove(); netUnsub(); };
+    return () => { appSub.remove(); netUnsub(); };
   }, [ownerId]);
 }

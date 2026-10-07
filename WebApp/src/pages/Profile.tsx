@@ -5,8 +5,7 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { useAppData, useAuth } from '@/providers';
 import { createSubAccount, deleteSubAccount } from '@/utils/profileutil';
 import { getSkipNote, setSkipNote } from '@/utils/prefs';
-import { handleLogout } from '@/utils/authutil';
-import { deleteAccount, getLoggedInUser, updateLoggedInUserProfile } from '@/utils/authutil';
+import { deleteAccount, handleLogout, getLoggedInUser, updateLoggedInUserProfile } from '@/utils/authutil';
 
 export default function Profile() {
   const navigate = useNavigate();

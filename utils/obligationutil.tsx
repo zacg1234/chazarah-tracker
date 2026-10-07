@@ -97,19 +97,31 @@ export function getUserQuarterTurnOut(
     };
 }
 
-export async function getUserQuarters(UserId: string, Year: Year, sessions: Session[]): Promise<QuarterTurnOut[]> {
-    const obligation = await getObligationByUserAndYear(UserId, Year.JewishYear);
-    if (!obligation) return [];
+// What a year's quarters need from the network. It only changes when the user/year (or a payment) does,
+// so fetch it once and recompute from the sessions as they change.
+export type ObligationData = {
+    quarters: [string, string, number][];
+    obligation: Obligation;
+    payments: Payment[];
+};
 
+export async function getObligationData(UserId: string, Year: Year): Promise<ObligationData | null> {
     const quarters = getQuartersForYear(Year);
-    if (quarters.length === 0) return [];
+    if (quarters.length === 0) return null;
 
-    // One payments query for the whole year instead of one per quarter
-    const payments = await getPaymentsByUserBetweenDates(
-        UserId,
-        quarters[0][0].slice(0, 10),
-        quarters[quarters.length - 1][1].slice(0, 10)
-    );
+    // One payments query for the whole year instead of one per quarter, run alongside the obligation query
+    const [obligation, payments] = await Promise.all([
+        getObligationByUserAndYear(UserId, Year.JewishYear),
+        getPaymentsByUserBetweenDates(
+            UserId,
+            quarters[0][0].slice(0, 10),
+            quarters[quarters.length - 1][1].slice(0, 10)
+        ),
+    ]);
+    return obligation ? { quarters, obligation, payments } : null;
+}
 
-    return quarters.map((q) => getUserQuarterTurnOut(q, obligation, sessions, payments));
+export function getUserQuarters(data: ObligationData | null, sessions: Session[]): QuarterTurnOut[] {
+    if (!data) return [];
+    return data.quarters.map((q) => getUserQuarterTurnOut(q, data.obligation, sessions, data.payments));
 }
