@@ -1,17 +1,11 @@
 import { EmailAlreadyUsedError, handleSignUp } from '@/utils/authutil';
+import { showAlert } from '@/components/Dialog';
+import { inputStyle } from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import Button from '@/components/Button';
+import { Text, TextInput } from '@/components/Text';
 
 export default function SignUp() {
     const router = useRouter();
@@ -72,14 +66,14 @@ export default function SignUp() {
                         autoCorrect={false}
                     />
 
-                    <TouchableOpacity style={styles.button} onPress={async () => {
+                    <Button title={loading ? 'Signing up...' : 'Sign Up'} onPress={async () => {
                         try {
                             setLoading(true);
                             await handleSignUp(email, password, firstname, lastname);
                             router.replace('/login');
                         } catch (error: Error | any) {
                             if (error instanceof EmailAlreadyUsedError) {
-                                Alert.alert(
+                                showAlert(
                                     'Email already in use',
                                     'That email is already being used for a different account.',
                                     [
@@ -91,14 +85,12 @@ export default function SignUp() {
                                     ]
                                 );
                             } else {
-                                Alert.alert('Sign Up failed', error.message);
+                                showAlert('Sign Up failed', error.message);
                             }
                         } finally {
                             setLoading(false);
                         }
-                    }} disabled={loading}>
-                        <Text style={styles.buttonText}>{loading ? 'Signing up...' : 'Sign Up'}</Text>
-                    </TouchableOpacity>
+                    }} disabled={loading} />
 
                     <TouchableOpacity onPress={() => router.push('/login')}>
                         <Text style={styles.link}>Already have an account? Log in</Text>
@@ -112,8 +104,6 @@ export default function SignUp() {
 const styles = StyleSheet.create({
     container: { width: '90%', alignItems: 'center' },
     title: { fontSize: 28, fontWeight: 'bold', marginBottom: 20 },
-    input: { width: '100%', borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 10, padding: 13, marginVertical: 6, backgroundColor: '#fff', color: '#0f172a', fontSize: 16 },
-    button: { backgroundColor: '#2563eb', padding: 15, borderRadius: 10, width: '100%', alignItems: 'center', marginTop: 10 },
-    buttonText: { color: 'white', fontWeight: 'bold' },
+    input: inputStyle,
     link: { color: '#2563eb', marginTop: 20 },
 });

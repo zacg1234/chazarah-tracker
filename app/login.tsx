@@ -1,19 +1,12 @@
 import { useAuth } from '@/providers/AuthProvider';
+import { showAlert } from '@/components/Dialog';
 import { handleLogin } from '@/utils/authutil';
+import { inputStyle } from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import {
-  Alert,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
-} from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import Button from '@/components/Button';
+import { Text, TextInput } from '@/components/Text';
 
 export default function Login() {
   const router = useRouter();
@@ -74,20 +67,15 @@ export default function Login() {
           >
             <Text style={styles.forgotText}>Forgot password?</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={async () => {
+          <Button title={loading ? 'Logging in...' : 'Log In'} onPress={async () => {
               try {
                 await handleLogin(email.trim(), password, setLoading)
                 router.replace('/(tabs)/chazarah');
               } catch (error: Error | any) {
-                Alert.alert('Login failed', error?.message ?? 'Something went wrong.');
+                showAlert('Login failed', error?.message ?? 'Something went wrong.');
               }
             }}
-            disabled={loading}
-          >
-            <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Log In'}</Text>
-          </TouchableOpacity>
+            disabled={loading} />
           <TouchableOpacity onPress={() => router.push('/signup')}>
             <Text style={styles.link}>Don’t have an account? Sign up</Text>
           </TouchableOpacity>
@@ -101,9 +89,7 @@ const styles = StyleSheet.create({
   container: { width: '90%', alignItems: 'center' },
   logo: { width: 320, height: 60, marginBottom: 15 },
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 25, marginTop: 20, color: '#b39d0e' },
-  input: { width: '100%', borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 10, padding: 13, marginVertical: 6, backgroundColor: '#fff', color: '#0f172a', fontSize: 16 },
-  button: { backgroundColor: '#2563eb', padding: 15, borderRadius: 10, width: '100%', alignItems: 'center', marginTop: 10 },
-  buttonText: { color: 'white', fontWeight: 'bold' },
+  input: inputStyle,
   forgotWrap: { alignSelf: 'flex-end', marginTop: 2 },
   forgotText: { color: '#2563eb', fontSize: 14 },
   link: { color: '#2563eb', marginTop: 20 },

@@ -1,9 +1,10 @@
-import { colors, radius, shadow } from '@/constants/theme';
+import { colors, radii, softShadow, space } from '@/constants/theme';
 import { formatDateMDY } from '@/utils/dateutil';
 import { getUserQuarters } from '@/utils/obligationutil';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useContext, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/Text';
 import { SessionsContext, UserContext, YearContext } from './_layout';
 
 export default function ObligationScreen() {
@@ -41,6 +42,7 @@ export default function ObligationScreen() {
   const current = quarters.slice().reverse().find((q) => q.IsActive);
   const owedNow = current ? Math.ceil(current.MinutesOwed - current.MinutesChazered) : 0;
   const caughtUp = owedNow <= 0;
+  const ahead = Math.max(-owedNow, 0); // surplus minutes beyond what's owed so far
   const tone = caughtUp ? colors.good : colors.bad;
 
   return (
@@ -58,9 +60,9 @@ export default function ObligationScreen() {
       ) : (
         <>
           <View style={[styles.hero, { backgroundColor: caughtUp ? colors.goodSoft : colors.badSoft }]}>
-            <Text style={[styles.heroLabel, { color: tone }]}>Minutes owed (current quarter)</Text>
-            <Text style={[styles.heroValue, { color: tone }]}>{Math.max(owedNow, 0)}</Text>
-            <Text style={[styles.heroNote, { color: tone }]}>{caughtUp ? 'You’re all caught up 🎉' : 'Keep going!'}</Text>
+            <Text style={[styles.heroLabel, { color: tone }]}>{ahead > 0 ? 'Minutes ahead' : 'Minutes owed'} (current quarter)</Text>
+            <Text style={[styles.heroValue, { color: tone }]}>{ahead > 0 ? ahead : Math.max(owedNow, 0)}</Text>
+            <Text style={[styles.heroNote, { color: tone }]}>{!caughtUp ? 'Keep going!' : ahead > 0 ? 'You’re ahead of your obligation 🎉' : 'You’re all caught up 🎉'}</Text>
             <View style={styles.weeklyPill}>
               <Text style={styles.weeklyText}>Your weekly obligation: <Text style={styles.weeklyValue}>{current?.ObligationPerWeek ?? quarters[0]?.ObligationPerWeek ?? 0} min</Text></Text>
             </View>
@@ -106,22 +108,22 @@ function Row({ label, value, color }: { label: string; value: string; color?: st
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: 16, gap: 14 },
-  empty: { textAlign: 'center', color: colors.muted, fontSize: 16, padding: 24 },
-  hero: { alignItems: 'center', borderRadius: radius, paddingVertical: 22, paddingHorizontal: 16 },
-  heroLabel: { fontSize: 15, fontWeight: '600', textAlign: 'center' },
-  heroValue: { fontSize: 52, fontWeight: '800', marginVertical: 2 },
-  heroNote: { fontSize: 14 },
-  weeklyPill: { marginTop: 12, backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 999, paddingVertical: 6, paddingHorizontal: 14 },
+  content: { padding: space.lg, gap: space.lg },
+  empty: { textAlign: 'center', color: colors.muted, fontSize: 16, padding: space.xl },
+  hero: { alignItems: 'center', borderRadius: radii.lg, paddingVertical: space.xl, paddingHorizontal: space.lg },
+  heroLabel: { fontSize: 14, fontWeight: '600', textAlign: 'center', letterSpacing: 0.3, textTransform: 'uppercase' },
+  heroValue: { fontSize: 64, fontWeight: '800', marginTop: space.xs, letterSpacing: -1 },
+  heroNote: { fontSize: 15, fontWeight: '500', marginBottom: space.xs },
+  weeklyPill: { marginTop: space.md, backgroundColor: 'rgba(255,255,255,0.75)', borderRadius: radii.pill, paddingVertical: 7, paddingHorizontal: 16 },
   weeklyText: { fontSize: 14, color: colors.muted },
   weeklyValue: { fontWeight: '700', color: colors.ink },
-  card: { backgroundColor: colors.card, borderRadius: radius, padding: 16, ...shadow },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 },
-  quarterTitle: { fontSize: 18, fontWeight: '700', color: colors.primary },
+  card: { backgroundColor: colors.card, borderRadius: radii.lg, padding: space.lg + 4, ...softShadow },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: space.md },
+  quarterTitle: { fontSize: 20, fontWeight: '700', color: colors.ink },
   quarterDates: { fontSize: 13, color: colors.muted, flexShrink: 1, textAlign: 'right' },
-  track: { height: 8, borderRadius: 4, backgroundColor: colors.line, overflow: 'hidden', marginBottom: 12 },
-  fill: { height: '100%', borderRadius: 4 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 5 },
+  track: { height: 10, borderRadius: 5, backgroundColor: colors.line, overflow: 'hidden', marginBottom: space.lg },
+  fill: { height: '100%', borderRadius: 5 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 9 },
   rowLabel: { fontSize: 15, color: colors.muted },
-  rowValue: { fontSize: 15, fontWeight: '700', color: colors.ink },
+  rowValue: { fontSize: 16, fontWeight: '700', color: colors.ink },
 });

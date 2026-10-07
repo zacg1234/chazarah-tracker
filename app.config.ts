@@ -12,6 +12,10 @@ export default ({ config }: { config: ExpoConfig }) => ({
     ...(config.ios || {}),
     bundleIdentifier: 'com.zacg1234.chazarahtracker',
     supportsTablet: true,
+    infoPlist: {
+      ...((config.ios as any)?.infoPlist || {}),
+      NSSupportsLiveActivities: true, // lock-screen stopwatch
+    },
   },
   android: {
     ...(config.android || {}),
@@ -46,6 +50,8 @@ export default ({ config }: { config: ExpoConfig }) => ({
   plugins: [
     'expo-router',
     'expo-web-browser',
+    '@bacons/apple-targets',
+    './plugins/withStopwatchIntent',
     [
       'expo-splash-screen',
       {

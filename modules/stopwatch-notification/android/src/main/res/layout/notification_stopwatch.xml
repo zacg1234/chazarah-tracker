@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:baselineAligned="true"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <!-- Running: the system ticks this chronometer itself, so it keeps counting with the screen off -->
+    <Chronometer
+        android:id="@+id/stopwatch_running"
+        style="@android:style/TextAppearance.Material.Notification.Title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="30sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
+    <!-- Paused: static text -->
+    <TextView
+        android:id="@+id/stopwatch_paused"
+        style="@android:style/TextAppearance.Material.Notification.Title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="30sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
+    <!-- Small tag beside the time (Paused / a family member's name) -->
+    <TextView
+        android:id="@+id/stopwatch_status"
+        style="@android:style/TextAppearance.Material.Notification"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:textSize="13sp" />
+</LinearLayout>

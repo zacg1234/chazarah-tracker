@@ -48,3 +48,6 @@ app-example
 .vscode
 
 claude.md
+# Local native module build output
+modules/*/android/build/
+modules/*/android/.cxx/

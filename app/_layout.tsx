@@ -1,3 +1,5 @@
+import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, Inter_800ExtraBold, useFonts } from '@expo-google-fonts/inter';
+import { DialogHost } from '@/components/Dialog';
 import { AuthProvider, useAuth } from '@/providers/AuthProvider';
 import { FamilyProvider } from '@/providers/FamilyProvider';
 import ResetPassword from './reset-password';
@@ -46,6 +48,12 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts({
+    Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, Inter_800ExtraBold,
+    AlarmClock: require('../assets/fonts/AlarmClock.ttf'),
+  });
+  if (!fontsLoaded && !fontError) return null; // brief: the splash screen stays up
+
   return (
     <SafeAreaProvider>
       <AuthProvider>
@@ -53,6 +61,7 @@ export default function RootLayout() {
           <ThemeProvider value={DefaultTheme}>
             <StatusBar style="dark" backgroundColor="#ffffff" translucent={false} />
             <RootNavigator />
+            <DialogHost />
           </ThemeProvider>
         </FamilyProvider>
       </AuthProvider>

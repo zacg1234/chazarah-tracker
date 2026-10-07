@@ -1,0 +1,7 @@
+{
+  "name": "stopwatch-notification",
+  "version": "0.1.0",
+  "description": "Ongoing stopwatch notification (Android) / Live Activity (iOS) with pause and submit buttons",
+  "main": "index.ts",
+  "license": "UNLICENSED"
+}

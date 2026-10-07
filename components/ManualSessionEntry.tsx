@@ -1,10 +1,15 @@
 import { UserContext, YearContext } from '@/app/(tabs)/_layout';
+import Button from '@/components/Button';
+import Popup from '@/components/Popup';
+import { colors, radii } from '@/constants/theme';
+import { showAlert } from '@/components/Dialog';
 import { toLocalTimestamp } from '@/utils/dateutil';
 import { createSession, updateSession } from '@/utils/sessionutil';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router } from 'expo-router';
 import React, { useContext, useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Text, TextInput } from '@/components/Text';
 
 type ManualSessionEntryProps = {
   visible: boolean;
@@ -100,11 +105,11 @@ const handleTimeChange = (_event: any, selected?: Date) => {
 
   const handleSubmit = async () => {
     if (!user?.id || !selectedYear?.JewishYear) {
-      Alert.alert('Error', 'User or year not selected.');
+      showAlert('Error', 'User or year not selected.');
       return;
     }
     if (!sessionLength || isNaN(Number(sessionLength)) || Number(sessionLength) <= 0) {
-      Alert.alert('Error', 'Please enter a valid session length in minutes.');
+      showAlert('Error', 'Please enter a valid session length in minutes.');
       return;
     }
    
@@ -126,7 +131,7 @@ const handleTimeChange = (_event: any, selected?: Date) => {
           SessionNote: note,
           SessionStartTime: sessionStartTime,
         }, selectedYear);
-        Alert.alert('Success', `Session Submitted: ${sessionLength} min.`);
+        showAlert('Success', `Session Submitted: ${sessionLength} min.`);
       }
 
       onClose();
@@ -136,163 +141,105 @@ const handleTimeChange = (_event: any, selected?: Date) => {
       router.replace('/obligation');
     } catch (error: Error | any) {
         // Keep the modal open so the user's input isn't lost
-        Alert.alert('Error', error?.message ?? 'Failed to save session.');
+        showAlert('Error', error?.message ?? 'Failed to save session.');
     }
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={styles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.formContainer}>
-            <Text style={styles.title}>
-              {mode === 'edit' ? 'Edit Session' : 'Manual Session Entry'}
+    <Popup visible={visible} onClose={onClose}>
+          <Text style={styles.title}>
+            {mode === 'edit' ? 'Edit Session' : 'Manual Session Entry'}
+          </Text>
+          <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.inputButton}>
+            <Text style={styles.inputButtonText}>
+              Date: {date.toLocaleDateString()}
             </Text>
-            <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.inputButton}>
-              <Text style={styles.inputButtonText}>
-                Date: {date.toLocaleDateString()}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setShowTimePicker(true)} style={styles.inputButton}>
-              <Text style={styles.inputButtonText}>
-                Time: {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </Text>
-            </TouchableOpacity>
-            {showDatePicker && (
-              <DateTimePicker
-                value={date}
-                mode="date"
-                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                onChange={handleDateChange}
-              />
-            )}
-            {showTimePicker && (
-              <DateTimePicker
-                value={date}
-                mode="time"
-                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                onChange={handleTimeChange}
-              />
-            )}
-            <TextInput
-              style={styles.input}
-              placeholder="Session Length (minutes)"
-              keyboardType="numeric"
-              value={sessionLength}
-              onChangeText={setSessionLength}
-              placeholderTextColor={"#94a3b8"}
-              returnKeyType="next"
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setShowTimePicker(true)} style={styles.inputButton}>
+            <Text style={styles.inputButtonText}>
+              Time: {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </Text>
+          </TouchableOpacity>
+          {showDatePicker && (
+            <DateTimePicker
+              value={date}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={handleDateChange}
             />
-            <TextInput
-              style={[styles.input, styles.noteInput]}
-              placeholder="Note (optional)"
-              value={note}
-              onChangeText={setNote}
-              multiline
-              placeholderTextColor={"#94a3b8"}
+          )}
+          {showTimePicker && (
+            <DateTimePicker
+              value={date}
+              mode="time"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={handleTimeChange}
             />
-            <View style={styles.buttonRow}>
-              <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onClose}>
-                <Text style={styles.buttonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.button, styles.submitButton]} onPress={handleSubmit}>
-                <Text style={styles.buttonText}>{mode === 'edit' ? 'Update' : 'Submit'}</Text>
-              </TouchableOpacity>
-            </View>
+          )}
+          <TextInput
+            style={styles.input}
+            placeholder="Session Length (minutes)"
+            keyboardType="numeric"
+            value={sessionLength}
+            onChangeText={setSessionLength}
+            placeholderTextColor={"#94a3b8"}
+            returnKeyType="next"
+          />
+          <TextInput
+            style={[styles.input, styles.noteInput]}
+            placeholder="Note (optional)"
+            value={note}
+            onChangeText={setNote}
+            multiline
+            placeholderTextColor={"#94a3b8"}
+          />
+          <View style={styles.buttonRow}>
+            <Button compact variant="soft" title="Cancel" style={{ flex: 1 }} onPress={onClose} />
+            <Button compact title={mode === 'edit' ? 'Update' : 'Submit'} style={{ flex: 1 }} onPress={handleSubmit} />
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </Modal>
+    </Popup>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.25)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 24,
-  },
-  formContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 24,
-    width: 320,
-    alignItems: 'stretch',
-    elevation: 4,
-  },
   title: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 19,
+    fontWeight: '700',
     marginBottom: 18,
     textAlign: 'center',
+    color: colors.ink,
   },
   noteInput: {
-    height: 60,
+    height: 84,
     textAlignVertical: 'top',
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#cbd5e1',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 14,
+    borderWidth: 1.5,
+    borderColor: colors.line,
+    borderRadius: radii.md,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    marginBottom: 12,
     fontSize: 16,
-    backgroundColor: '#f4f6fa',
+    color: colors.ink,
+    backgroundColor: '#f8fafc',
   },
   inputButton: {
-    borderWidth: 1,
-    borderColor: '#cbd5e1',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 14,
-    backgroundColor: '#f4f6fa',
+    borderWidth: 1.5,
+    borderColor: colors.line,
+    borderRadius: radii.md,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    marginBottom: 12,
+    backgroundColor: '#f8fafc',
   },
   inputButtonText: {
     fontSize: 16,
-    color: '#0f172a',
+    color: colors.ink,
   },
   buttonRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
+    marginTop: 8,
     gap: 10,
-  },
-  button: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  cancelButton: {
-    backgroundColor: '#c62828',
-    marginRight: 4,
-  },
-  submitButton: {
-    backgroundColor: '#2563eb',
-    marginLeft: 4,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
   },
 });

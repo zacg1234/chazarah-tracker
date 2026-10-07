@@ -1,6 +1,21 @@
 import type { Year } from '@/types/year';
 import { supabase } from '../services/supabaseClient';
 import { endOfDay, parseLocal, toLocalTimestamp } from './dateutil';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Last list of years we saw, so the stopwatch can still be submitted after an offline cold start
+const YEARS_KEY = 'cached_years';
+async function cacheYears(years: Year[]) {
+  try { await AsyncStorage.setItem(YEARS_KEY, JSON.stringify(years)); } catch { /* best effort */ }
+}
+async function getCachedYears(): Promise<Year[]> {
+  try {
+    const json = await AsyncStorage.getItem(YEARS_KEY);
+    return json ? (JSON.parse(json) as Year[]) : [];
+  } catch {
+    return [];
+  }
+}
 
 export const fetchYears = async () => {
   const { data, error } = await supabase
@@ -10,9 +25,10 @@ export const fetchYears = async () => {
 
   if (error) {
     console.error('Error fetching years:', error);
-    return [];
+    return getCachedYears(); // offline: fall back to the last list we saw
   }
 
+  if (data?.length) cacheYears(data);
   return data || [];
 };
 

@@ -1,0 +1,5 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": { "modules": ["StopwatchNotificationModule"] },
+  "android": { "modules": ["expo.modules.stopwatchnotification.StopwatchNotificationModule"] }
+}

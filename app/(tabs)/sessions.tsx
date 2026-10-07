@@ -1,4 +1,5 @@
 import ManualSessionEntry from '@/components/ManualSessionEntry';
+import { showAlert } from '@/components/Dialog';
 import { formatDateMDY } from '@/utils/dateutil';
 import { deleteSession } from '@/utils/sessionutil';
 import { msToMinutes, to12HourTime } from '@/utils/timeutil';
@@ -6,7 +7,9 @@ import { isCurrentYear } from '@/utils/yearutils';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Dimensions, LayoutChangeEvent, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, LayoutChangeEvent, Platform, StyleSheet, View } from 'react-native';
+import Button from '@/components/Button';
+import { Text } from '@/components/Text';
 import Animated, {
   interpolate,
   runOnJS,
@@ -150,14 +153,13 @@ export default function SessionsScreen() {
         resolve(window.confirm('Are you sure you want to delete this session?'));
         return;
       }
-      Alert.alert(
+      showAlert(
         'Delete Session',
         'Are you sure you want to delete this session?',
         [
           { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
           { text: 'Delete', style: 'destructive', onPress: () => resolve(true) },
-        ],
-        { cancelable: true }
+        ]
       );
     });
     if (!confirmed) return;
@@ -165,7 +167,7 @@ export default function SessionsScreen() {
       await deleteSession(selectedSession.SessionId);
       await refreshSessions();
     } catch (e) {
-      Alert.alert('Error', 'Failed to delete session.');
+      showAlert('Error', 'Failed to delete session.');
     }
   };
 
@@ -194,13 +196,8 @@ export default function SessionsScreen() {
 
             {isCurrentYear(selectedYear) ? (
               <View style={styles.buttonRow}>
-                <TouchableOpacity 
-                style={[styles.button, styles.editButton]} onPress={handleEdit}>
-                  <Text style={styles.buttonText}>Edit</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.button, styles.deleteButton]} onPress={handleDelete}>
-                  <Text style={styles.buttonText}>Delete</Text>
-                </TouchableOpacity>
+                <Button compact title="Edit" style={{ flex: 1 }} onPress={handleEdit} />
+                <Button compact variant="destructive" title="Delete" style={{ flex: 1 }} onPress={handleDelete} />
               </View>
             ) : (
               <Text style={styles.disabledMsg}>
@@ -253,7 +250,7 @@ export default function SessionsScreen() {
         {/* Fade gradients top/bottom */}
         <View pointerEvents="none" style={[styles.fadeOverlay, styles.fadeTop]}>
           <LinearGradient
-            colors={['#f4f6fa', '#e2e8f0']}
+            colors={['#f4f6fa', 'rgba(255,255,255,0)']}
             style={StyleSheet.absoluteFill}
             start={{ x: 0, y: 0 }}
             end={{ x: 0, y: 1 }}
@@ -261,7 +258,7 @@ export default function SessionsScreen() {
         </View>
         <View pointerEvents="none" style={[styles.fadeOverlay, styles.fadeBottom]}>
           <LinearGradient
-            colors={['#e2e8f0', '#f4f6fa']}
+            colors={['rgba(255,255,255,0)', '#f4f6fa']}
             style={StyleSheet.absoluteFill}
             start={{ x: 0, y: 0 }}
             end={{ x: 0, y: 1 }}
@@ -295,14 +292,16 @@ const styles = StyleSheet.create({
   wheelContainer: {
     width: width * 0.45,
     height: WHEEL_HEIGHT,
-    backgroundColor: '#e2e8f0',
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 24,
+    borderBottomLeftRadius: 24,
     position: 'relative',
     overflow: 'hidden',
     alignSelf: 'center'
   },
   itemContainer: { height: ITEM_HEIGHT, alignItems: 'center', justifyContent: 'center' },
   itemActive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.35)',
+    backgroundColor: '#eff4ff',
     borderRadius: 14,
   },
   itemText: { fontSize: 18, fontWeight: 'bold', color: '#0f172a' },
@@ -331,26 +330,10 @@ const styles = StyleSheet.create({
   fadeTop: { top: 0 },
   fadeBottom: { bottom: 0 },
   detailsContainer: { flex: 1, padding: 20, justifyContent: 'center' },
-  detailTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 10 },
+  detailTitle: { fontSize: 22, fontWeight: '700', marginBottom: 10, color: '#0f172a' },
   detailText: { fontSize: 16, marginBottom: 6 },
   label: { fontWeight: '600' },
   buttonRow: { flexDirection: 'row', marginTop: 20, gap: 10 },
-  button: { 
-    flex: 1, 
-    alignItems: 'center', 
-    paddingVertical: 12, 
-    borderRadius: 8,
-    // Add shadow for iOS
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    // Add elevation for Android
-    elevation: 4,
-  },  
-  editButton: { backgroundColor: '#2563eb' },
-  deleteButton: { backgroundColor: '#c62828' },
-  buttonText: { color: '#fff', fontWeight: 'bold' },
   placeholder: { textAlign: 'center', fontSize: 16, color: '#999' },
 
   disabledMsg: {

@@ -2,6 +2,7 @@ import { supabase } from '@/services/supabaseClient';
 import type { Session } from '@/types/session';
 import type { Year } from '@/types/year';
 import { endOfDay, parseLocal } from './dateutil';
+import { enqueueSession, isNetworkError } from './offlineQueue';
 
 // CREATE
 export async function createSession(session: Omit<Session, 'SessionId'>, year: Year) {
@@ -13,6 +14,20 @@ export async function createSession(session: Omit<Session, 'SessionId'>, year: Y
       .single();
     if (error) throw error;
     return data as Session;
+  }
+}
+
+// CREATE, or hold on to the session on this device if there is no connection.
+// Validation runs first so a bad session is never queued; only network failures are queued.
+export async function createSessionOrQueue(session: Omit<Session, 'SessionId'>, year: Year, ownerId: string): Promise<'saved' | 'queued'> {
+  validateSessionData(session, year);
+  try {
+    await createSession(session, year);
+    return 'saved';
+  } catch (error) {
+    if (!isNetworkError(error)) throw error;
+    await enqueueSession(ownerId, session);
+    return 'queued';
   }
 }
 

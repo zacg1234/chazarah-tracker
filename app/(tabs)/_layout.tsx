@@ -1,16 +1,18 @@
 import type { Year } from '@/types/year';
-import ProfileSwitcher from '@/components/ProfileSwitcher';
+import { showAlert } from '@/components/Dialog';
+import AppHeader from '@/components/AppHeader';
+import { HapticTab } from '@/components/haptic-tab';
+import { colors, fontFamilies } from '@/constants/theme';
+import { useAuth } from '@/providers/AuthProvider';
 import { useFamily } from '@/providers/FamilyProvider';
+import { useOfflineSync } from '@/utils/useOfflineSync';
 import { getSessionsByUserAndYear } from '@/utils/sessionutil';
 import { fetchYears, getCurrentYear } from '@/utils/yearutils';
 import { Ionicons } from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker';
-import { Tabs, useRouter } from 'expo-router';
+import { Tabs } from 'expo-router';
 import { createContext, useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Linking, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
-
-const CHART_URL = 'https://chazarahtracker.com/chart';
+import { Platform, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export const YearContext = createContext<Year | null>(null);
 export const UserContext = createContext<any>(null);
@@ -24,9 +26,9 @@ export default function TabsLayout() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   //const [showPicker, setShowPicker] = useState(false);
-  const { active: user, profiles } = useFamily(); // whoever is being viewed/entered for
-  const showSwitcher = profiles.length > 1; // the switcher bar then covers the status bar area
-  const router = useRouter();
+  const { active: user } = useFamily(); // whoever is being viewed/entered for
+  const insets = useSafeAreaInsets();
+  const { user: authUser } = useAuth(); // the logged-in account (sub-profiles queue under it)
 
   // 🔹 Fetch years from Supabase
   useEffect(() => {
@@ -38,7 +40,7 @@ export default function TabsLayout() {
         const defaultYear = getCurrentYear(fetchedYears);
         setSelectedYear(defaultYear ?? fetchedYears[0] ?? null);
       } catch (error) {
-        Alert.alert('Error', 'Failed to load years.');
+        showAlert('Error', 'Failed to load years.');
       } finally {
         setLoading(false);
       }
@@ -54,7 +56,7 @@ export default function TabsLayout() {
         setSessions(data || []);
       } catch (e) {
         console.error('Failed to load sessions', e);
-        Alert.alert('Error', 'Failed to load sessions.');
+        showAlert('Error', 'Failed to load sessions.');
       } finally {
         setSessionsLoading(false);
       }
@@ -68,136 +70,36 @@ export default function TabsLayout() {
     refreshSessions();
   }, [refreshSessions]);
 
+  useOfflineSync(authUser?.id, refreshSessions);
+
   const sessionsCtxValue = useMemo(() => ({ sessions, loading: sessionsLoading, refreshSessions }), [sessions, sessionsLoading, refreshSessions]);
 
   return (
     <UserContext.Provider value={user}>
       <YearContext.Provider value={selectedYear}>
         <SessionsContext.Provider value={sessionsCtxValue}>
-          <View style={{ flex: 1 }}>
-            <ProfileSwitcher />
+          <View style={{ flex: 1, backgroundColor: colors.bg }}>
+            <AppHeader years={years} selectedYear={selectedYear} onSelectYear={setSelectedYear} loading={loading} />
             <Tabs
               screenOptions={({ route }) => ({
-                headerStyle: { backgroundColor: '#fff', borderBottomColor: '#e2e8f0', borderBottomWidth: StyleSheet.hairlineWidth, shadowOpacity: 0, elevation: 0 },
-                sceneStyle: { backgroundColor: '#f4f6fa' },
-                headerStatusBarHeight: showSwitcher ? 0 : undefined,
-                tabBarStyle: { borderTopColor: '#e2e8f0' },
-                tabBarLabelStyle: { fontWeight: '600' },
-                headerTitleAlign: 'left',
-
-                // 🔹 Add picker in header
-                headerTitle: () =>
-                  loading ? (
-                    <ActivityIndicator size="small" />
-                  ) : Platform.OS === 'ios' ? (
-                    // iOS: compact button → native ActionSheet
-                    <TouchableOpacity
-                      onPress={() =>
-                        ActionSheetIOS.showActionSheetWithOptions(
-                          {
-                            options: [...years.map((y) => `${y.JewishYear}`), 'Cancel'],
-                            cancelButtonIndex: years.length,
-                            title: 'Select Year',
-                          },
-                          (buttonIndex) => {
-                            if (buttonIndex < years.length) {
-                              setSelectedYear(years[buttonIndex]);
-                            }
-                          }
-                        )
-                      }
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        backgroundColor: '#fff',
-                        borderRadius: 10,
-                        borderWidth: 1,
-                        borderColor: '#0f172a',
-                        paddingVertical: 6,
-                        paddingHorizontal: 12,
-                        gap: 6,
-                      }}
-                    >
-                      <Text style={{ color: '#0f172a', fontWeight: '600', fontSize: 16 }}>
-                        {selectedYear?.JewishYear ?? '—'}
-                      </Text>
-                      <Ionicons name="chevron-down" size={14} color="#0f172a" />
-                    </TouchableOpacity>
-                  ) : (
-                    // Android: native dropdown Picker
-                    <View
-                      style={{
-                        backgroundColor: '#ffffffff',
-                        borderRadius: 12,
-                        borderWidth: 1,
-                        borderColor: '#0f172a',
-                        paddingHorizontal: 5,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <Picker
-                        style={{
-                          width: 120,
-                          color: '#0f172a',
-                          paddingHorizontal: 0,
-                          marginHorizontal: 0,
-                        }}
-                        selectedValue={selectedYear?.JewishYear ?? undefined}
-                        onValueChange={(jewishYear: number) => {
-                          const found = years.find((y) => y.JewishYear === jewishYear);
-                          if (found) setSelectedYear(found);
-                        }}
-                        dropdownIconColor="#0f172a"
-                        mode="dropdown"
-                      >
-                        {years.map((yearObj) => (
-                          <Picker.Item
-                            key={yearObj.JewishYear}
-                            label={`${yearObj.JewishYear}`}
-                            value={yearObj.JewishYear}
-                          />
-                        ))}
-                      </Picker>
-                    </View>
-                  ),
-
-                // 🔹 Profile icon button
-                headerRight: () => (
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <TouchableOpacity
-                    onPress={() => Linking.openURL(CHART_URL).catch(() => Alert.alert('Error', 'Could not open the chart.'))}
-                    accessibilityLabel="Open progress chart in browser"
-                    style={{ paddingVertical: 6, paddingHorizontal: 6 }}
-                  >
-                    <Ionicons name="bar-chart-outline" size={26} color="#0f172a" />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => router.push('/modal/profile')}
-                    style={{
-                      marginRight: 10,
-                      paddingVertical: 6,
-                      paddingHorizontal: 12,
-                      borderRadius: 6,
-                    }}
-                  >
-                    <Ionicons name="person-circle-outline" size={28} color="#0f172a" />
-                  </TouchableOpacity>
-                  </View>
-                ),
-
-                // 🔹 Default tab icons restored
-                tabBarIcon: ({ color, size }) => {
-                  let iconName: keyof typeof Ionicons.glyphMap;
-
-                  if (route.name === 'chazarah') iconName = 'time-outline';
-                  else if (route.name === 'sessions') iconName = 'list-outline';
-                  else iconName = 'trophy-outline';
-
-                  return <Ionicons name={iconName} size={size} color={color} />;
+                headerShown: false,
+                sceneStyle: { backgroundColor: colors.bg },
+                tabBarButton: HapticTab,
+                tabBarStyle: {
+                  backgroundColor: colors.card,
+                  borderTopColor: colors.line,
+                  borderTopWidth: StyleSheet.hairlineWidth,
+                  elevation: 0,
+                  height: (Platform.OS === 'android' ? 64 : 54) + insets.bottom,
+                  paddingTop: 6,
                 },
-                tabBarActiveTintColor: '#2563eb',
-                tabBarInactiveTintColor: '#94a3b8',
+                tabBarLabelStyle: { fontFamily: fontFamilies['600'], fontSize: 11, letterSpacing: 0.2 },
+                tabBarIcon: ({ color, size, focused }) => {
+                  const base = route.name === 'chazarah' ? 'hourglass' : route.name === 'sessions' ? 'list' : 'trophy';
+                  return <Ionicons name={(focused ? base : `${base}-outline`) as keyof typeof Ionicons.glyphMap} size={size + 1} color={color} />;
+                },
+                tabBarActiveTintColor: colors.primary,
+                tabBarInactiveTintColor: colors.placeholder,
               })}
             >
               <Tabs.Screen name="chazarah" options={{ title: 'Chazarah' }} />

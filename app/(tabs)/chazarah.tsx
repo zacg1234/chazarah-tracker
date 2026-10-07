@@ -2,7 +2,9 @@ import ManualSessionEntry from '@/components/ManualSessionEntry';
 import Stopwatch from '@/components/Stopwatch';
 import { isCurrentYear } from '@/utils/yearutils';
 import { useContext, useState } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { colors, radii } from '@/constants/theme';
+import { Text } from '@/components/Text';
 import { SessionsContext, UserContext, YearContext } from './_layout';
 
 export default function ChazarahScreen() {
@@ -16,25 +18,23 @@ export default function ChazarahScreen() {
             {isCurrentYear(selectedYear) ? (
                 <>
                     {profile && <Stopwatch key={profile.id} />}
-                    <TouchableOpacity
-                        style={{
-                            marginBottom: 50,
-                            backgroundColor: '#2563eb',
-                            paddingVertical: 8,
-                            paddingHorizontal: 18,
-                            borderRadius: 8,
-                            shadowColor: '#000',
-                            shadowOffset: { width: 0, height: 2 },
-                            shadowOpacity: 0.2,
-                            shadowRadius: 4,
-                            elevation: 4,
-                        }}
+                    <Pressable
+                        style={({ pressed }) => ({
+                            marginBottom: 40,
+                            backgroundColor: colors.primary,
+                            paddingVertical: 14,
+                            paddingHorizontal: 28,
+                            borderRadius: radii.pill,
+                            boxShadow: '0 6px 16px rgba(37,99,235,0.28)',
+                            opacity: pressed ? 0.85 : 1,
+                            transform: [{ scale: pressed ? 0.97 : 1 }],
+                        })}
                         onPress={() => setManualVisible(true)}
                     >
-                        <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 14 }}>
+                        <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15, letterSpacing: 0.2 }}>
                             Manual Session Entry
                         </Text>
-                    </TouchableOpacity>
+                    </Pressable>
                     <ManualSessionEntry
                         visible={manualVisible}
                         onClose={() => setManualVisible(false)}
