@@ -13,7 +13,7 @@ import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // The app is light-only: pin the scheme so native pieces (keyboards, pickers, alerts) never go dark
-Appearance.setColorScheme('light');
+Appearance.setColorScheme?.('light'); // (not available when the app is rendered for the web)
 
 const LightTheme = { ...DefaultTheme, dark: false, colors: { ...DefaultTheme.colors, background: colors.bg, card: colors.card, text: colors.ink } };
 
