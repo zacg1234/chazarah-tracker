@@ -1,12 +1,13 @@
 import { useAuth } from '@/providers/AuthProvider';
 import { showAlert } from '@/components/Dialog';
 import { setNewPassword } from '@/utils/authutil';
-import { inputStyle } from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import Button from '@/components/Button';
-import { Text, TextInput } from '@/components/Text';
+import { Text } from '@/components/Text';
+import FormInput from '@/components/FormInput';
+import AuthLink from '@/components/AuthLink';
 
 // Landing screen for the link in the password-reset email (chazarahtracker://reset-password#...).
 // AuthProvider turns the link into a recovery session; here the user picks a new password.
@@ -44,20 +45,18 @@ export default function ResetPassword() {
           <>
             <Text style={styles.title}>Link expired</Text>
             <Text style={styles.subtitle}>{recoveryError}</Text>
-            <Button title={'Request a new link'} onPress={() => router.replace('/forgot-password')} />
+            <Button title={'Request a new link'} onPress={() => router.replace('/forgot-password')} style={{ marginTop: 4 }} />
           </>
         ) : (
           <ActivityIndicator />
         )}
-        <TouchableOpacity onPress={() => router.replace('/login')}>
-          <Text style={styles.link}>Back to log in</Text>
-        </TouchableOpacity>
+        <AuthLink action="Back to log in" onPress={() => router.replace('/login')} />
       </View>
     );
   }
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, backgroundColor: '#f4f6fa' }}>
       <ScrollView
         contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center' }}
         keyboardShouldPersistTaps="handled"
@@ -65,30 +64,24 @@ export default function ResetPassword() {
         <View style={styles.container}>
           <Text style={styles.title}>Choose a new password</Text>
           <Text style={styles.subtitle}>Enter a new password for your account.</Text>
-          <TextInput
-            style={styles.input}
+          <FormInput
             placeholder="New password"
-            placeholderTextColor="#94a3b8"
-            secureTextEntry
+            secureToggle
             autoCapitalize="none"
             autoComplete="new-password"
             value={password}
             onChangeText={setPassword}
           />
-          <TextInput
-            style={styles.input}
+          <FormInput
             placeholder="Confirm new password"
-            placeholderTextColor="#94a3b8"
-            secureTextEntry
+            secureToggle
             autoCapitalize="none"
             autoComplete="new-password"
             value={confirm}
             onChangeText={setConfirm}
           />
-          <Button title={saving ? 'Saving...' : 'Update Password'} onPress={submit} disabled={saving} />
-          <TouchableOpacity onPress={endRecovery}>
-            <Text style={styles.link}>Cancel</Text>
-          </TouchableOpacity>
+          <Button title={saving ? 'Saving...' : 'Update Password'} onPress={submit} disabled={saving} style={{ marginTop: 20, width: '100%' }} />
+          <AuthLink action="Cancel" onPress={endRecovery} />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -97,9 +90,7 @@ export default function ResetPassword() {
 
 const styles = StyleSheet.create({
   container: { width: '90%', alignItems: 'center' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, backgroundColor: '#f4f6fa' },
   title: { fontSize: 26, fontWeight: 'bold', marginBottom: 12, textAlign: 'center' },
-  subtitle: { fontSize: 15, color: '#555', textAlign: 'center', marginBottom: 16 },
-  input: inputStyle,
-  link: { color: '#2563eb', marginTop: 20 },
+  subtitle: { fontSize: 15, lineHeight: 22, color: '#64748b', textAlign: 'center', marginBottom: 28 },
 });

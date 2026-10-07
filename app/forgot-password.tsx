@@ -1,11 +1,12 @@
-import { inputStyle } from '@/constants/theme';
 import { sendPasswordReset } from '@/utils/authutil';
 import { showAlert } from '@/components/Dialog';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import Button from '@/components/Button';
-import { Text, TextInput } from '@/components/Text';
+import { Text } from '@/components/Text';
+import FormInput from '@/components/FormInput';
+import AuthLink from '@/components/AuthLink';
 
 export default function ForgotPassword() {
   const router = useRouter();
@@ -16,7 +17,12 @@ export default function ForgotPassword() {
   const submit = async () => {
     try {
       setSending(true);
-      await sendPasswordReset(email);
+      // Supabase can take a long time to hand the email to its mail server. Validation and rate-limit
+      // errors come back quickly, so after a few seconds assume it's on its way instead of making the
+      // user stare at a spinner (the request keeps going in the background).
+      const request = sendPasswordReset(email);
+      request.catch((e) => console.warn('Password reset request failed', e));
+      await Promise.race([request, new Promise((resolve) => setTimeout(resolve, 4000))]);
       showAlert(
         'Check your email',
         `If an account exists for ${email.trim()}, a reset link is on its way. The link opens a page where you can choose a new password.`,
@@ -37,21 +43,17 @@ export default function ForgotPassword() {
       >
         <View style={styles.container}>
           <Text style={styles.title}>Forgot Password</Text>
-          <Text style={styles.subtitle}>Enter your email and we’ll send you a link to reset it.</Text>
-          <TextInput
-            style={styles.input}
+          <Text style={styles.subtitle}>We’ll email you a link to reset your password.</Text>
+          <FormInput
             placeholder="Email"
             autoCapitalize="none"
             autoCorrect={false}
             keyboardType="email-address"
             onChangeText={setEmail}
             value={email}
-            placeholderTextColor="#94a3b8"
           />
-          <Button title={sending ? 'Sending...' : 'Send Reset Link'} onPress={submit} disabled={sending} />
-          <TouchableOpacity onPress={() => router.replace('/login')}>
-            <Text style={styles.link}>Back to log in</Text>
-          </TouchableOpacity>
+          <Button title={sending ? 'Sending...' : 'Send Reset Link'} onPress={submit} disabled={sending} style={{ marginTop: 20, width: '100%' }} />
+          <AuthLink action="Back to log in" onPress={() => router.replace('/login')} />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -61,7 +63,5 @@ export default function ForgotPassword() {
 const styles = StyleSheet.create({
   container: { width: '90%', alignItems: 'center' },
   title: { fontSize: 28, fontWeight: 'bold', marginBottom: 12 },
-  subtitle: { fontSize: 15, color: '#555', textAlign: 'center', marginBottom: 16 },
-  input: inputStyle,
-  link: { color: '#2563eb', marginTop: 20 },
+  subtitle: { fontSize: 15, lineHeight: 22, color: '#64748b', textAlign: 'center', marginBottom: 28 },
 });

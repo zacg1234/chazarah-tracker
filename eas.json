@@ -24,6 +24,11 @@
     "production": {
       "ios": {
         "ascAppId": "6763051233"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./chazarah-tracker-7cd77d7d6e1d.json",
+        "track": "alpha",
+        "releaseStatus": "completed"
       }
     }
   }

@@ -16,6 +16,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export const YearContext = createContext<Year | null>(null);
 export const UserContext = createContext<any>(null);
+// False until the years and the active profile have loaded (screens show a loader instead of guessing)
+export const ReadyContext = createContext(false);
 export const SessionsContext = createContext<{ sessions: any[]; loading: boolean; refreshSessions: () => Promise<void>; }>({ sessions: [], loading: false, refreshSessions: async () => { } });
 
 
@@ -75,6 +77,7 @@ export default function TabsLayout() {
   const sessionsCtxValue = useMemo(() => ({ sessions, loading: sessionsLoading, refreshSessions }), [sessions, sessionsLoading, refreshSessions]);
 
   return (
+    <ReadyContext.Provider value={!loading && !!user}>
     <UserContext.Provider value={user}>
       <YearContext.Provider value={selectedYear}>
         <SessionsContext.Provider value={sessionsCtxValue}>
@@ -110,5 +113,6 @@ export default function TabsLayout() {
         </SessionsContext.Provider>
       </YearContext.Provider>
     </UserContext.Provider>
+    </ReadyContext.Provider>
   );
 }

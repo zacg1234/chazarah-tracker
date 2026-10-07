@@ -1,12 +1,13 @@
 import { useAuth } from '@/providers/AuthProvider';
 import { showAlert } from '@/components/Dialog';
 import { handleLogin } from '@/utils/authutil';
-import { inputStyle } from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import Button from '@/components/Button';
-import { Text, TextInput } from '@/components/Text';
+import { Text } from '@/components/Text';
+import FormInput from '@/components/FormInput';
+import AuthLink from '@/components/AuthLink';
 
 export default function Login() {
   const router = useRouter();
@@ -41,25 +42,22 @@ export default function Login() {
             resizeMode="contain"
           />
           <Text style={styles.title}>CHAZARAH TRACKER</Text>
-          <TextInput
-            style={styles.input}
+          <FormInput
             placeholder="Email"
             autoCapitalize="none"
             onChangeText={setEmail}
             value={email}
             keyboardType="email-address"
+            autoComplete="email"
             autoCorrect={false}
-            placeholderTextColor="#94a3b8"
           />
-          <TextInput
-            style={styles.input}
+          <FormInput
             placeholder="Password"
             onChangeText={setPassword}
             value={password}
-            secureTextEntry
+            secureToggle
             autoCapitalize="none"
             autoComplete="current-password"
-            placeholderTextColor="#94a3b8"
           />
           <TouchableOpacity
             style={styles.forgotWrap}
@@ -75,10 +73,8 @@ export default function Login() {
                 showAlert('Login failed', error?.message ?? 'Something went wrong.');
               }
             }}
-            disabled={loading} />
-          <TouchableOpacity onPress={() => router.push('/signup')}>
-            <Text style={styles.link}>Don’t have an account? Sign up</Text>
-          </TouchableOpacity>
+            disabled={loading} style={{ width: '100%' }} />
+          <AuthLink lead="Don’t have an account?" action="Sign up" onPress={() => router.push('/signup')} />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -87,10 +83,8 @@ export default function Login() {
 
 const styles = StyleSheet.create({
   container: { width: '90%', alignItems: 'center' },
-  logo: { width: 320, height: 60, marginBottom: 15 },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 25, marginTop: 20, color: '#b39d0e' },
-  input: inputStyle,
-  forgotWrap: { alignSelf: 'flex-end', marginTop: 2 },
+  logo: { width: 320, height: 60, marginBottom: 20 },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 32, marginTop: 24, color: '#b39d0e' },
+  forgotWrap: { alignSelf: 'flex-end', paddingVertical: 10, marginTop: 4, marginBottom: 16 },
   forgotText: { color: '#2563eb', fontSize: 14 },
-  link: { color: '#2563eb', marginTop: 20 },
 });

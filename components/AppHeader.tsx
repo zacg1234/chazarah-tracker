@@ -58,7 +58,7 @@ export default function AppHeader({ years, selectedYear, onSelectYear, loading }
 
         <View style={styles.actions}>
           <IconButton name="stats-chart-outline" label="Open progress chart in browser" onPress={() => Linking.openURL(CHART_URL).catch(() => showAlert('Error', 'Could not open the chart.'))} />
-          <IconButton name="person-circle-outline" size={26} label="Profile" onPress={() => router.push('/modal/profile')} />
+          <IconButton name="person-outline" label="Profile" onPress={() => router.push('/modal/profile')} />
         </View>
       </View>
 
@@ -85,8 +85,8 @@ export default function AppHeader({ years, selectedYear, onSelectYear, loading }
 function IconButton({ name, label, onPress, size = 22 }: { name: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void; size?: number }) {
   return (
     <Pressable onPress={onPress} accessibilityLabel={label} hitSlop={6}
-      style={({ pressed }) => [styles.iconBtn, pressed && { backgroundColor: colors.line }]}>
-      <Ionicons name={name} size={size} color={colors.ink} />
+      style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.8, transform: [{ scale: 0.95 }] }]}>
+      <Ionicons name={name} size={size} color={colors.primary} />
     </Pressable>
   );
 }
@@ -126,17 +126,17 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.6 },
   yearPill: {
     flexDirection: 'row', alignItems: 'center', gap: 6, height: 36, paddingHorizontal: 14,
-    borderRadius: radii.pill, backgroundColor: colors.primarySoft,
+    borderRadius: radii.pill, backgroundColor: colors.primarySoft, borderWidth: 1.5, borderColor: '#bfd0fb',
   },
   yearText: { fontSize: 16, fontWeight: '700', color: colors.ink, letterSpacing: 0.2 },
   profileChip: {
     flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6, height: 36, paddingHorizontal: 12,
-    borderRadius: radii.pill, backgroundColor: colors.soft,
+    borderRadius: radii.pill, backgroundColor: colors.soft, borderWidth: 1.5, borderColor: colors.line,
   },
-  profileChipOther: { backgroundColor: colors.warnSoft },
+  profileChipOther: { backgroundColor: colors.warnSoft, borderColor: colors.warnLine },
   profileText: { flexShrink: 1, fontSize: 14, fontWeight: '600', color: colors.muted },
-  actions: { flexDirection: 'row', alignItems: 'center' },
-  iconBtn: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  iconBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primarySoft, borderWidth: 1.5, borderColor: '#bfd0fb' },
   overlay: { flex: 1, backgroundColor: colors.scrim, justifyContent: 'flex-end' },
   sheet: { backgroundColor: colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: space.lg, paddingTop: space.sm },
   grabber: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.inputBorder, marginBottom: space.md },

@@ -8,6 +8,12 @@ import { deleteSession } from '@/utils/sessionutil';
 import { msToMinutes, to12HourTime } from '@/utils/timeutil';
 import { isCurrentYear } from '@/utils/yearutils';
 
+const TrashIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6" />
+  </svg>
+);
+
 export default function Sessions() {
   const { sessions, refreshSessions, selectedYear, sessionsLoading } = useAppData();
   const [editSession, setEditSession] = useState<any | null>(null);
@@ -60,8 +66,8 @@ export default function Sessions() {
                     <p>{s.SessionNote || <span className="muted">No note</span>}</p>
                     {editable && (
                       <div className="row">
-                        <button className="btn outline grow" onClick={() => setEditSession(s)}>Edit</button>
-                        <button className="btn danger-outline grow" onClick={() => setToDelete(s)}>Delete</button>
+                        <button className="icon-btn" aria-label="Delete session" onClick={() => setToDelete(s)}><TrashIcon /></button>
+                        <button className="btn tonal grow" onClick={() => setEditSession(s)}>Edit</button>
                       </div>
                     )}
                   </div>
@@ -90,8 +96,8 @@ export default function Sessions() {
                   <td data-label="Note" className="note">{s.SessionNote || <span className="muted">—</span>}</td>
                   {editable && (
                     <td className="actions">
-                      <button className="btn sm outline" onClick={() => setEditSession(s)}>Edit</button>
-                      <button className="btn sm danger-outline" onClick={() => setToDelete(s)}>Delete</button>
+                      <button className="btn sm tonal" onClick={() => setEditSession(s)}>Edit</button>
+                      <button className="icon-btn sm" aria-label="Delete session" onClick={() => setToDelete(s)}><TrashIcon /></button>
                     </td>
                   )}
                 </tr>

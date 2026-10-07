@@ -14,7 +14,9 @@ import androidx.core.app.NotificationCompat
 
 object StopwatchNotifier {
   const val ACTION_TOGGLE = "expo.modules.stopwatchnotification.TOGGLE"
-  private const val CHANNEL_ID = "stopwatch"
+  // A channel's importance can't be raised after creation, so the lock-screen-visible channel has a new id
+  private const val LEGACY_CHANNEL_ID = "stopwatch"
+  private const val CHANNEL_ID = "stopwatch_lockscreen"
   private const val MESSAGE_CHANNEL_ID = "stopwatch_messages"
   private const val NOTIFICATION_ID = 4242
   private const val SCHEME = "chazarahtracker"
@@ -24,10 +26,15 @@ object StopwatchNotifier {
   private fun manager(context: Context): NotificationManager {
     val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     if (!channelsCreated) {
+      nm.deleteNotificationChannel(LEGACY_CHANNEL_ID) // was IMPORTANCE_LOW: "silent" notifications are hidden from the lock screen
+      // IMPORTANCE_DEFAULT shows on the lock screen; sound and vibration are off so it stays quiet
       nm.createNotificationChannel(
-        NotificationChannel(CHANNEL_ID, "Stopwatch", NotificationManager.IMPORTANCE_LOW).apply {
-          description = "Shows the running stopwatch"
+        NotificationChannel(CHANNEL_ID, "Stopwatch", NotificationManager.IMPORTANCE_DEFAULT).apply {
+          description = "Shows the running stopwatch, including on the lock screen"
           setShowBadge(false)
+          setSound(null, null)
+          enableVibration(false)
+          lockscreenVisibility = Notification.VISIBILITY_PUBLIC
         }
       )
       nm.createNotificationChannel(
@@ -67,7 +74,7 @@ object StopwatchNotifier {
       .setOnlyAlertOnce(true)
       .setCategory(NotificationCompat.CATEGORY_STOPWATCH)
       .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-      .setPriority(NotificationCompat.PRIORITY_LOW)
+      .setPriority(NotificationCompat.PRIORITY_DEFAULT)
       .setContentIntent(appIntent(context, null, 0))
       .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
 

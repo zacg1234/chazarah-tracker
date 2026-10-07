@@ -24,7 +24,7 @@ export const colors = {
 };
 
 // ---- Refined scale (spacing, type, radii, soft shadow) ----
-export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 };
+export const space = { xs: 4, sm: 10, md: 16, lg: 20, xl: 28, xxl: 40 };
 
 export const radii = { sm: 10, md: 14, lg: 20, xl: 24, pill: 999 };
 
@@ -50,7 +50,7 @@ export const inputStyle = {
   borderRadius: radii.md,
   paddingVertical: 15,
   paddingHorizontal: 16,
-  marginVertical: 6,
+  marginVertical: 8,
   backgroundColor: colors.card,
   color: colors.ink,
   fontSize: 16,

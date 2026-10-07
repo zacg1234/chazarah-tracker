@@ -3,12 +3,19 @@ import { DialogHost } from '@/components/Dialog';
 import { AuthProvider, useAuth } from '@/providers/AuthProvider';
 import { FamilyProvider } from '@/providers/FamilyProvider';
 import ResetPassword from './reset-password';
+import { colors } from '@/constants/theme';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
+import { Appearance, View } from 'react-native';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+// The app is light-only: pin the scheme so native pieces (keyboards, pickers, alerts) never go dark
+Appearance.setColorScheme('light');
+
+const LightTheme = { ...DefaultTheme, dark: false, colors: { ...DefaultTheme.colors, background: colors.bg, card: colors.card, text: colors.ink } };
 
 export const unstable_settings = {
   initialRouteName: 'login',
@@ -58,10 +65,12 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <AuthProvider>
         <FamilyProvider>
-          <ThemeProvider value={DefaultTheme}>
-            <StatusBar style="dark" backgroundColor="#ffffff" translucent={false} />
-            <RootNavigator />
-            <DialogHost />
+          <ThemeProvider value={LightTheme}>
+            <View style={{ flex: 1, backgroundColor: colors.bg }}>
+              <StatusBar style="dark" backgroundColor="#ffffff" translucent={false} />
+              <RootNavigator />
+              <DialogHost />
+            </View>
           </ThemeProvider>
         </FamilyProvider>
       </AuthProvider>

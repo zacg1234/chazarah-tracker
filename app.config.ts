@@ -7,6 +7,7 @@ export default ({ config }: { config: ExpoConfig }) => ({
   owner: 'zacg1234',
   scheme: 'chazarahtracker',
   userInterfaceStyle: 'light',
+  backgroundColor: '#f4f6fa',
   icon: './assets/images/Chazarah_Tracker_Logo_Simple.png',
   ios: {
     ...(config.ios || {}),

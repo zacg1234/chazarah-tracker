@@ -27,7 +27,7 @@ export default function ForgotPassword() {
   return (
     <AuthShell
       title={sent ? 'Check your email' : 'Forgot your password?'}
-      subtitle={sent ? undefined : 'Enter your email and we’ll send you a link to reset it.'}
+      subtitle={sent ? undefined : 'We’ll email you a link to reset your password.'}
       footer={<Link to="/login">← Back to log in</Link>}
     >
       {sent ? (

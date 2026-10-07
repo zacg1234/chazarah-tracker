@@ -11,7 +11,53 @@ import { Text, TextInput } from '@/components/Text';
 import Button from '@/components/Button';
 import { colors, radii, softShadow, space } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
+import * as Updates from 'expo-updates';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+// Shows which build/update is running, so "did my over-the-air update arrive?" can be answered on the phone
+function AppVersionInfo() {
+    const { currentlyRunning, isUpdateAvailable, isUpdatePending, checkError, downloadError } = Updates.useUpdates();
+    const [busy, setBusy] = useState(false);
+    const [result, setResult] = useState('');
+
+    const check = async () => {
+        setBusy(true);
+        setResult('');
+        try {
+            const res = await Updates.checkForUpdateAsync();
+            if (!res.isAvailable) { setResult('You are up to date.'); return; }
+            setResult('Downloading update...');
+            const fetched = await Updates.fetchUpdateAsync();
+            if (fetched.isNew) await Updates.reloadAsync(); // restarts the app on the new update
+            else setResult('You are up to date.');
+        } catch (e: any) {
+            setResult(`Update check failed: ${e?.message ?? e}`);
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    const error = checkError?.message ?? downloadError?.message;
+    // Dev builds report updates as enabled but reject every update call, so show a note instead of an error
+    if (__DEV__ || !Updates.isEnabled) {
+        return (
+            <View style={{ marginTop: space.xl, alignItems: 'center' }}>
+                <Text style={styles.muted}>Development build · over-the-air updates are off</Text>
+            </View>
+        );
+    }
+    return (
+        <View style={{ marginTop: space.xl, gap: 4, alignItems: 'center' }}>
+            <Text style={styles.muted}>
+                Version {Updates.runtimeVersion ?? '?'} · {currentlyRunning.isEmbeddedLaunch || !currentlyRunning.updateId ? 'built-in code' : `update ${currentlyRunning.updateId.slice(0, 8)}`}
+            </Text>
+            <Text style={styles.muted}>Channel: {Updates.channel ?? 'none'}{isUpdateAvailable || isUpdatePending ? ' · update ready' : ''}</Text>
+            {!!error && <Text style={[styles.muted, { color: colors.bad, textAlign: 'center' }]}>{error}</Text>}
+            {!!result && <Text style={[styles.muted, { textAlign: 'center' }]}>{result}</Text>}
+            <Button title={busy ? 'Checking...' : 'Check for updates'} variant="ghost" onPress={check} disabled={busy || !Updates.isEnabled} />
+        </View>
+    );
+}
 
 export default function ProfileModal() {
     const [user, setUser] = useState<any>(null);
@@ -19,6 +65,7 @@ export default function ProfileModal() {
     const [lastname, setLastname] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [initialName, setInitialName] = useState({ first: '', last: '' });
     const [askForNote, setAskForNote] = useState(true);
     const { profiles, active, setActive, reload } = useFamily();
     const [newFirst, setNewFirst] = useState('');
@@ -38,6 +85,7 @@ export default function ProfileModal() {
                 setUser(userObj);
                 setFirstname(userObj?.user_metadata?.firstname || '');
                 setLastname(userObj?.user_metadata?.lastname || '');
+                setInitialName({ first: userObj?.user_metadata?.firstname || '', last: userObj?.user_metadata?.lastname || '' });
                 setEmail(userObj?.user_metadata?.email || userObj?.email || '');
             } catch (error) {
                 showAlert('Error', 'Failed to load user data.');
@@ -83,6 +131,9 @@ export default function ProfileModal() {
         ]);
     };
 
+    // "Save changes" only becomes the main (solid) button once something was actually edited
+    const dirty = firstname.trim() !== initialName.first || lastname.trim() !== initialName.last || password.length > 0;
+
     const handleSave = async () => {
         try {
             await updateLoggedInUserProfile({
@@ -91,8 +142,9 @@ export default function ProfileModal() {
                 password
             }, setLoading);
             setPassword('');
+            setInitialName({ first: firstname.trim(), last: lastname.trim() });
             reload().catch(() => { });
-            showAlert('Success', 'Profile updated successfully.');
+            showAlert('Saved', 'Your profile was updated.');
         } catch (error: Error | any) {
             showAlert('Error', error.message);
         }
@@ -109,7 +161,7 @@ export default function ProfileModal() {
     };
 
     const onDeleteAccount = () =>
-        showAlert('Delete account', 'Are you sure you want to delete your entire profile? This action cannot be undone.', [
+        showAlert('Delete your account?', 'This permanently deletes your profile, sessions and payments. It can’t be undone.', [
             { text: 'Cancel', style: 'cancel' },
             {
                 text: 'Delete', style: 'destructive', onPress: async () => {
@@ -171,7 +223,7 @@ export default function ProfileModal() {
                         </View>
                         {field('email', 'Email', { value: email, editable: false, placeholder: 'name@example.com', keyboardType: 'email-address', autoCapitalize: 'none' })}
                         {field('pw', 'New password', { value: password, onChangeText: setPassword, secureTextEntry: true, autoCapitalize: 'none', placeholder: 'Leave blank to keep current' })}
-                        <Button title="Save changes" onPress={handleSave} />
+                        <Button title="Save changes" variant={dirty ? 'primary' : 'tonal'} disabled={!dirty} onPress={handleSave} />
                     </View>
 
                     <Text style={styles.sectionTitle}>Preferences</Text>
@@ -207,10 +259,11 @@ export default function ProfileModal() {
                             <View style={{ flex: 1 }}>{field('nf', 'First name', { value: newFirst, onChangeText: setNewFirst, placeholder: 'First name', autoCapitalize: 'words' })}</View>
                             <View style={{ flex: 1 }}>{field('nl', 'Last name', { value: newLast, onChangeText: setNewLast, placeholder: 'Last name', autoCapitalize: 'words' })}</View>
                         </View>
-                        <Button title="Add family member" variant="secondary" loading={adding} onPress={handleAddProfile} />
+                        <Button title="Add family member" variant="tonal" loading={adding} onPress={handleAddProfile} />
                     </View>
 
                     <Button title="Delete account" variant="ghostDestructive" onPress={onDeleteAccount} style={{ marginTop: space.lg }} />
+                    <AppVersionInfo />
                 </ScrollView>
             )}
         </KeyboardAvoidingView>
@@ -224,7 +277,7 @@ const styles = StyleSheet.create({
     },
     backBtn: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', marginLeft: -6 },
     headerTitle: { flex: 1, fontSize: 20, fontWeight: '700', color: colors.ink },
-    logoutPill: { paddingHorizontal: 14, height: 34, borderRadius: radii.pill, backgroundColor: colors.badSoft, alignItems: 'center', justifyContent: 'center' },
+    logoutPill: { paddingHorizontal: 14, height: 34, borderRadius: radii.pill, backgroundColor: colors.badSoft, borderWidth: 1.5, borderColor: '#f5c2c2', alignItems: 'center', justifyContent: 'center' },
     logoutText: { color: colors.bad, fontWeight: '600', fontSize: 14 },
     center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     content: { padding: space.lg, gap: space.sm },

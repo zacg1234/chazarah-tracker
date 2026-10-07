@@ -9,6 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Dimensions, LayoutChangeEvent, Platform, StyleSheet, View } from 'react-native';
 import Button from '@/components/Button';
+import IconButton from '@/components/IconButton';
 import { Text } from '@/components/Text';
 import Animated, {
   interpolate,
@@ -154,8 +155,8 @@ export default function SessionsScreen() {
         return;
       }
       showAlert(
-        'Delete Session',
-        'Are you sure you want to delete this session?',
+        'Delete this session?',
+        'This can’t be undone.',
         [
           { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
           { text: 'Delete', style: 'destructive', onPress: () => resolve(true) },
@@ -167,7 +168,7 @@ export default function SessionsScreen() {
       await deleteSession(selectedSession.SessionId);
       await refreshSessions();
     } catch (e) {
-      showAlert('Error', 'Failed to delete session.');
+      showAlert('Couldn’t delete session', 'Please try again.');
     }
   };
 
@@ -196,8 +197,8 @@ export default function SessionsScreen() {
 
             {isCurrentYear(selectedYear) ? (
               <View style={styles.buttonRow}>
-                <Button compact title="Edit" style={{ flex: 1 }} onPress={handleEdit} />
-                <Button compact variant="destructive" title="Delete" style={{ flex: 1 }} onPress={handleDelete} />
+                <IconButton icon="trash-outline" label="Delete session" destructive onPress={handleDelete} />
+                <Button compact variant="tonal" title="Edit" style={{ flex: 1 }} onPress={handleEdit} />
               </View>
             ) : (
               <Text style={styles.disabledMsg}>
@@ -333,7 +334,7 @@ const styles = StyleSheet.create({
   detailTitle: { fontSize: 22, fontWeight: '700', marginBottom: 10, color: '#0f172a' },
   detailText: { fontSize: 16, marginBottom: 6 },
   label: { fontWeight: '600' },
-  buttonRow: { flexDirection: 'row', marginTop: 20, gap: 10 },
+  buttonRow: { flexDirection: 'row', alignItems: 'center', marginTop: 28, gap: 12 },
   placeholder: { textAlign: 'center', fontSize: 16, color: '#999' },
 
   disabledMsg: {

@@ -1,3 +1,4 @@
+import FadeIn from '@/components/FadeIn';
 import { SessionsContext, UserContext, YearContext } from '@/app/(tabs)/_layout';
 import { showAlert } from '@/components/Dialog';
 import { useAuth } from '@/providers/AuthProvider';
@@ -171,8 +172,8 @@ export default function Stopwatch() {
     // ✅ Reset with confirmation
     const handleReset = () => {
         showAlert(
-            'Reset Timer',
-            'Are you sure you want to reset the timer?',
+            'Reset the timer?',
+            'This clears the time on the clock.',
             [
                 { text: 'Cancel', style: 'cancel' },
                 {
@@ -198,7 +199,7 @@ export default function Stopwatch() {
             return;
         }
         if (elapsed < 1000) {
-            showAlert('Error', 'Nothing to submit yet. Start the stopwatch first.');
+            showAlert('Nothing to submit', 'Start the timer first, then tap Submit.');
             return;
         }
         const length = isRunning && startTimestamp ? Date.now() - startTimestamp : elapsed;
@@ -271,7 +272,7 @@ export default function Stopwatch() {
             setStartTimestamp(null);
             setNoteModalVisible(false);
             if (outcome === 'queued') {
-                const body = `${formatTime(length)} min saved on this device. Connect to the internet and open the app to post the session.`;
+                const body = `${Math.floor(length / 60000)} min saved on this device. Connect to the internet and open the app to post the session.`;
                 postMessage('Session saved locally', body);
                 showAlert('Session saved locally', body);
                 return;
@@ -279,15 +280,15 @@ export default function Stopwatch() {
             // Refresh shared sessions context so other tabs update immediately
             await refreshSessions();
             router.replace('/obligation');
-            showAlert('Success', `Session Submitted: ${formatTime(length)} min.`);
+            showAlert('Session saved', `${Math.floor(length / 60000)} min logged.`);
         } catch (error: Error | any) {
             setNoteModalVisible(false);
-            showAlert('Error', error?.message ?? 'Failed to save session.');
+            showAlert('Couldn’t save session', error?.message ?? 'Please try again.');
         }
     }
 
     return (
-        <View style={styles.container}>
+        <FadeIn show={stateLoaded} duration={200} style={styles.container}>
             <View style={styles.display}>
                 <Text
                     style={[
@@ -332,15 +333,7 @@ export default function Stopwatch() {
                     style={[styles.buttonRetro, styles.submitButton]}
                     onPress={handleSubmit}
                 >
-                    <Text
-                        style={[
-                            styles.buttonTextRetro,
-                            { fontFamily: 'AlarmClock' },
-                            styles.submitText,
-                        ]}
-                    >
-                        SUBMIT
-                    </Text>
+                    <Text style={styles.submitText}>Submit</Text>
                 </TouchableOpacity>
             </View>
             {/* Note popup */}
@@ -365,7 +358,7 @@ export default function Stopwatch() {
                         </TouchableOpacity>
                 </View>
             </Popup>
-        </View>
+        </FadeIn>
     );
 }
 
@@ -424,9 +417,12 @@ const styles = StyleSheet.create({
         fontSize: 30,
         textAlign: 'center',
     },
+    // Regular app font (the clock typeface is only for the time and the status)
     submitText: {
-        lineHeight: 32,
-        textAlignVertical: 'center',
+        color: '#ffffff',
+        fontSize: 17,
+        fontWeight: '700',
+        letterSpacing: 0.4,
     },
     iconCenter: {
         textAlign: 'center',

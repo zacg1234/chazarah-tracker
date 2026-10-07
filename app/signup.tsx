@@ -1,11 +1,12 @@
 import { EmailAlreadyUsedError, handleSignUp } from '@/utils/authutil';
 import { showAlert } from '@/components/Dialog';
-import { inputStyle } from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import Button from '@/components/Button';
-import { Text, TextInput } from '@/components/Text';
+import { Text } from '@/components/Text';
+import FormInput from '@/components/FormInput';
+import AuthLink from '@/components/AuthLink';
 
 export default function SignUp() {
     const router = useRouter();
@@ -27,38 +28,30 @@ export default function SignUp() {
                 <View style={styles.container}>
                     <Text style={styles.title}>Create Account</Text>
 
-                    <TextInput
-                        style={styles.input}
+                    <FormInput
                         placeholder="First Name"
-                        placeholderTextColor="#94a3b8"
                         autoCapitalize="words"
                         onChangeText={setFirstname}
                         value={firstname}
                     />
 
-                    <TextInput
-                        style={styles.input}
+                    <FormInput
                         placeholder="Last Name"
-                        placeholderTextColor="#94a3b8"
                         autoCapitalize="words"
                         onChangeText={setLastname}
                         value={lastname}
                     />
 
-                    <TextInput
-                        style={styles.input}
+                    <FormInput
                         placeholder="Email"
-                        placeholderTextColor="#94a3b8"
                         autoCapitalize="none"
                         onChangeText={setEmail}
                         value={email}
                         keyboardType="email-address"
                     />
 
-                    <TextInput
-                        style={styles.input}
+                    <FormInput
                         placeholder="Password"
-                        placeholderTextColor="#94a3b8"
                         onChangeText={setPassword}
                         value={password}
                         autoCapitalize="none"
@@ -90,11 +83,9 @@ export default function SignUp() {
                         } finally {
                             setLoading(false);
                         }
-                    }} disabled={loading} />
+                    }} disabled={loading} style={{ marginTop: 20, width: '100%' }} />
 
-                    <TouchableOpacity onPress={() => router.push('/login')}>
-                        <Text style={styles.link}>Already have an account? Log in</Text>
-                    </TouchableOpacity>
+                    <AuthLink lead="Already have an account?" action="Log in" onPress={() => router.push('/login')} />
                 </View>
             </ScrollView>
         </KeyboardAvoidingView>
@@ -103,7 +94,5 @@ export default function SignUp() {
 
 const styles = StyleSheet.create({
     container: { width: '90%', alignItems: 'center' },
-    title: { fontSize: 28, fontWeight: 'bold', marginBottom: 20 },
-    input: inputStyle,
-    link: { color: '#2563eb', marginTop: 20 },
+    title: { fontSize: 28, fontWeight: 'bold', marginBottom: 32 },
 });

@@ -109,7 +109,7 @@ const handleTimeChange = (_event: any, selected?: Date) => {
       return;
     }
     if (!sessionLength || isNaN(Number(sessionLength)) || Number(sessionLength) <= 0) {
-      showAlert('Error', 'Please enter a valid session length in minutes.');
+      showAlert('Check the length', 'Enter the session length in minutes, for example 45.');
       return;
     }
    
@@ -131,7 +131,7 @@ const handleTimeChange = (_event: any, selected?: Date) => {
           SessionNote: note,
           SessionStartTime: sessionStartTime,
         }, selectedYear);
-        showAlert('Success', `Session Submitted: ${sessionLength} min.`);
+        showAlert('Session saved', `${sessionLength} min logged.`);
       }
 
       onClose();
@@ -141,7 +141,7 @@ const handleTimeChange = (_event: any, selected?: Date) => {
       router.replace('/obligation');
     } catch (error: Error | any) {
         // Keep the modal open so the user's input isn't lost
-        showAlert('Error', error?.message ?? 'Failed to save session.');
+        showAlert('Couldn’t save session', error?.message ?? 'Please try again.');
     }
   };
 
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 19,
     fontWeight: '700',
-    marginBottom: 18,
+    marginBottom: 24,
     textAlign: 'center',
     color: colors.ink,
   },
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     paddingVertical: 14,
     paddingHorizontal: 14,
-    marginBottom: 12,
+    marginBottom: 16,
     fontSize: 16,
     color: colors.ink,
     backgroundColor: '#f8fafc',
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     paddingVertical: 14,
     paddingHorizontal: 14,
-    marginBottom: 12,
+    marginBottom: 16,
     backgroundColor: '#f8fafc',
   },
   inputButtonText: {
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
   },
   buttonRow: {
     flexDirection: 'row',
-    marginTop: 8,
-    gap: 10,
+    marginTop: 16,
+    gap: 12,
   },
 });

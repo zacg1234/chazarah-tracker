@@ -4,7 +4,7 @@ import { impact } from '@/utils/haptics';
 import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 
-type Variant = 'primary' | 'secondary' | 'destructive' | 'soft' | 'ghost' | 'ghostDestructive';
+type Variant = 'primary' | 'tonal' | 'tonalDestructive' | 'secondary' | 'destructive' | 'soft' | 'ghost' | 'ghostDestructive';
 type Props = {
   title: string;
   onPress?: () => void;
@@ -16,10 +16,13 @@ type Props = {
 };
 
 const palette: Record<Variant, { bg: string; fg: string; border?: string; shadow?: string }> = {
-  primary: { bg: colors.primary, fg: '#fff', shadow: '0 6px 16px rgba(37,99,235,0.28)' },
-  destructive: { bg: colors.bad, fg: '#fff', shadow: '0 6px 16px rgba(198,40,40,0.25)' },
-  secondary: { bg: colors.card, fg: colors.primary, border: '#bfd0fb' },
-  soft: { bg: colors.soft, fg: colors.ink },
+  primary: { bg: colors.primary, fg: '#fff', shadow: '0 4px 12px rgba(37,99,235,0.22)' },
+  // Same look as IconButton: soft tinted fill + thin border
+  tonal: { bg: colors.primarySoft, fg: colors.primary, border: '#bfd0fb' },
+  tonalDestructive: { bg: colors.badSoft, fg: colors.bad, border: '#f5c2c2' },
+  destructive: { bg: colors.bad, fg: '#fff', shadow: '0 4px 12px rgba(198,40,40,0.2)' },
+  secondary: { bg: colors.primarySoft, fg: colors.primary, border: '#bfd0fb' }, // same as tonal
+  soft: { bg: colors.soft, fg: colors.ink, border: colors.line },
   ghost: { bg: 'transparent', fg: colors.primary },
   ghostDestructive: { bg: 'transparent', fg: colors.bad },
 };
@@ -42,13 +45,13 @@ export default function Button({ title, onPress, variant = 'primary', loading, d
         style,
       ]}
     >
-      {loading ? <ActivityIndicator color={p.fg} /> : <Text style={[styles.text, { color: p.fg }]}>{title}</Text>}
+      {loading ? <ActivityIndicator color={p.fg} /> : <Text style={[styles.text, { color: p.fg }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{title}</Text>}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  base: { minHeight: 52, borderRadius: radii.md, paddingHorizontal: 20, alignItems: 'center', justifyContent: 'center' },
-  compact: { minHeight: 44, borderRadius: radii.sm + 2, paddingHorizontal: 16 },
+  base: { minHeight: 52, borderRadius: radii.pill, paddingHorizontal: 20, alignItems: 'center', justifyContent: 'center' },
+  compact: { minHeight: 44, borderRadius: radii.pill, paddingHorizontal: 8 },
   text: { fontSize: 16, fontWeight: '600', letterSpacing: 0.2 },
 });

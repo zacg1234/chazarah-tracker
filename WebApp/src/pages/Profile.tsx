@@ -160,7 +160,7 @@ export default function Profile() {
           <h2>Delete account</h2>
           <p className="muted">Permanently removes your account and all your sessions. This can’t be undone.</p>
         </div>
-        <button className="btn danger" onClick={() => setConfirmDelete(true)}>Delete account</button>
+        <button className="btn danger-outline" onClick={() => setConfirmDelete(true)}>Delete account</button>
       </section>
 
       <ConfirmDialog

@@ -2,6 +2,7 @@ import Button from '@/components/Button';
 import { Text } from '@/components/Text';
 import { colors, space } from '@/constants/theme';
 import { warn } from '@/utils/haptics';
+import { noOrphan } from '@/utils/text';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Modal, Pressable, StyleSheet, View } from 'react-native';
 
@@ -69,7 +70,7 @@ export function DialogHost() {
         <Pressable style={StyleSheet.absoluteFill} onPress={() => cancel && close(cancel)} />
         <Animated.View style={[styles.card, { transform: [{ scale }], opacity: fade }]}>
           <Text style={styles.title}>{current.title}</Text>
-          {!!current.message && <Text style={styles.message}>{current.message}</Text>}
+          {!!current.message && <Text style={styles.message}>{noOrphan(current.message)}</Text>}
           <View style={[styles.buttons, stacked && { flexDirection: 'column' }]}>
             {ordered.map((b, i) => (
               <Button
